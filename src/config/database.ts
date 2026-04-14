@@ -2,7 +2,9 @@ import sql, { config as SqlConfig, ConnectionPool } from "mssql";
 import { getAppEnv } from "./env";
 import { logger } from "../utils/logger";
 
+// globalDbPool: Publisher DB (trung tam, master + du lieu dong bo toan he thong).
 let globalDbPool: ConnectionPool | null = null;
+// localDbPool: Node DB cuc bo. Co the tro den QuanLyNhanSu_Node_HCM hoac QuanLyNhanSu_Node_HN.
 let localDbPool: ConnectionPool | null = null;
 
 function buildSqlConfig(config: {
@@ -86,6 +88,8 @@ export function getLocalDbPool(): ConnectionPool {
 export function getCurrentDbPool(): ConnectionPool {
   const env = getAppEnv();
 
+  // MODE=publisher -> dung Publisher DB.
+  // MODE=node -> dung local node DB (HCM/HN tuy theo LOCAL_DB_NAME trong env).
   if (env.mode === "publisher") {
     return getGlobalDbPool();
   }

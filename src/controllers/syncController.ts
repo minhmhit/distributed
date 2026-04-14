@@ -1,19 +1,33 @@
 import { Request, Response } from "express";
+import {
+  runNodeToPublisherSync,
+  runPublisherToNodeSync,
+} from "../sync/syncService";
 
-export function pullFromNodeController(
+export async function pullFromNodeController(
   _request: Request,
   response: Response,
-): void {
-  response.status(501).json({
-    message: "TODO: implement node-to-publisher sync receiver",
-  });
+): Promise<void> {
+  try {
+    const result = await runNodeToPublisherSync();
+    response.status(200).json(result);
+  } catch (error) {
+    response.status(500).json({
+      message: error instanceof Error ? error.message : "Sync failed",
+    });
+  }
 }
 
-export function pushToNodeController(
+export async function pushToNodeController(
   _request: Request,
   response: Response,
-): void {
-  response.status(501).json({
-    message: "TODO: implement publisher-to-node sync sender",
-  });
+): Promise<void> {
+  try {
+    const result = await runPublisherToNodeSync();
+    response.status(200).json(result);
+  } catch (error) {
+    response.status(500).json({
+      message: error instanceof Error ? error.message : "Sync failed",
+    });
+  }
 }

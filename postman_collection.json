@@ -1,0 +1,1165 @@
+{
+    "info":  {
+                 "_postman_id":  "0a6b5d7c-3c44-4f39-95ea-17ce4e20f6a5",
+                 "name":  "Distributed HRM - Full API Collection",
+                 "schema":  "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+                 "description":  "Collection bao quat Publisher (6.1), Node (6.2), Sync (6.3), Auth va test sync 2 chieu cho Node HCM + Node HN."
+             },
+    "variable":  [
+                     {
+                         "key":  "base_url",
+                         "value":  "http://localhost:3000/api",
+                         "type":  "string"
+                     },
+                     {
+                         "key":  "node_hcm_url",
+                         "value":  "http://localhost:3001/api",
+                         "type":  "string"
+                     },
+                     {
+                         "key":  "node_hn_url",
+                         "value":  "http://localhost:3002/api",
+                         "type":  "string"
+                     },
+                     {
+                         "key":  "token",
+                         "value":  "",
+                         "type":  "string"
+                     }
+                 ],
+    "item":  [
+                 {
+                     "name":  "Auth",
+                     "description":  "Dang nhap va luu token cho cac request khac.",
+                     "item":  [
+                                  {
+                                      "name":  "Publisher Login",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"username\": \"publisher_admin\",\n  \"password\": \"123456\"\n}"
+                                                               },
+                                                      "url":  "{{base_url}}/auth/login",
+                                                      "description":  "Dang nhap vao Publisher. Neu API tra ve token, script se luu vao bien {{token}}."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status code hop le\u0027, function () {",
+                                                                                    "  pm.expect([200, 201]).to.include(pm.response.code);",
+                                                                                    "});",
+                                                                                    "let data = {};",
+                                                                                    "try { data = pm.response.json(); } catch (e) {}",
+                                                                                    "if (data \u0026\u0026 data.token) {",
+                                                                                    "  pm.collectionVariables.set(\u0027token\u0027, data.token);",
+                                                                                    "}",
+                                                                                    "pm.test(\u0027Response la JSON/object\u0027, function () {",
+                                                                                    "  pm.expect(typeof data).to.equal(\u0027object\u0027);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "Node HCM Login",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"username\": \"node_hcm_admin\",\n  \"password\": \"123456\"\n}"
+                                                               },
+                                                      "url":  "{{node_hcm_url}}/auth/login",
+                                                      "description":  "Dang nhap vao Node HCM."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status code hop le\u0027, function () {",
+                                                                                    "  pm.expect([200, 201]).to.include(pm.response.code);",
+                                                                                    "});",
+                                                                                    "let data = {};",
+                                                                                    "try { data = pm.response.json(); } catch (e) {}",
+                                                                                    "if (data \u0026\u0026 data.token) pm.collectionVariables.set(\u0027token\u0027, data.token);"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  }
+                              ]
+                 },
+                 {
+                     "name":  "Publisher",
+                     "description":  "Toan bo endpoint Publisher 6.1.",
+                     "item":  [
+                                  {
+                                      "name":  "GET Branches",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{base_url}}/publisher/branches",
+                                                      "description":  "Lay danh sach chi nhanh."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });",
+                                                                                    "const d = pm.response.json();",
+                                                                                    "pm.test(\u0027Danh sach array\u0027, function(){ pm.expect(Array.isArray(d)).to.be.true; });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "POST Branch",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"maChiNhanh\": \"CNTEST\",\n  \"tenChiNhanh\": \"Chi nhanh Test\",\n  \"diaChi\": \"Viet Nam\",\n  \"trangThai\": true\n}"
+                                                               },
+                                                      "url":  "{{base_url}}/publisher/branches",
+                                                      "description":  "Tao chi nhanh moi."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 201/200\u0027, function(){ pm.expect([200,201]).to.include(pm.response.code); });",
+                                                                                    "const d = pm.response.json();",
+                                                                                    "pm.test(\u0027Co maChiNhanh\u0027, function(){ pm.expect(d).to.have.property(\u0027maChiNhanh\u0027); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "PUT Branch",
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"tenChiNhanh\": \"Chi nhanh Test Updated\",\n  \"diaChi\": \"Ha Noi\",\n  \"trangThai\": true\n}"
+                                                               },
+                                                      "url":  "{{base_url}}/publisher/branches/CNTEST",
+                                                      "description":  "Cap nhat chi nhanh."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "GET Positions",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{base_url}}/publisher/positions",
+                                                      "description":  "Lay danh sach chuc vu."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "POST Position",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"maChucVu\": \"CV99\",\n  \"tenChucVu\": \"Chuc vu test\",\n  \"heSoLuong\": 1.4\n}"
+                                                               },
+                                                      "url":  "{{base_url}}/publisher/positions",
+                                                      "description":  "Tao chuc vu."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 201/200\u0027, function(){ pm.expect([200,201]).to.include(pm.response.code); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "PUT Position",
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"tenChucVu\": \"Chuc vu test updated\",\n  \"heSoLuong\": 1.5\n}"
+                                                               },
+                                                      "url":  "{{base_url}}/publisher/positions/CV99",
+                                                      "description":  "Cap nhat chuc vu."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "GET Contract Types",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{base_url}}/publisher/contract-types",
+                                                      "description":  "Lay danh sach loai hop dong."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "POST Contract Type",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"maLoaiHopDong\": \"LHD99\",\n  \"tenLoaiHopDong\": \"Hop dong test\",\n  \"thoiHanThang\": 6\n}"
+                                                               },
+                                                      "url":  "{{base_url}}/publisher/contract-types",
+                                                      "description":  "Tao loai hop dong."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 201/200\u0027, function(){ pm.expect([200,201]).to.include(pm.response.code); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "POST Account",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"username\": \"user_test_01\",\n  \"password\": \"123456\",\n  \"maRole\": \"R04\",\n  \"maChiNhanh\": \"CNHCM\"\n}"
+                                                               },
+                                                      "url":  "{{base_url}}/publisher/accounts",
+                                                      "description":  "Tao tai khoan va gan role/chi nhanh."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 201/200\u0027, function(){ pm.expect([200,201]).to.include(pm.response.code); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "POST Ingest Node Data",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"tableName\": \"NhanVien\",\n  \"actionType\": \"UPSERT\",\n  \"recordId\": \"NV_POSTMAN_01\",\n  \"payload\": {\n    \"MaNhanVien\": \"NV_POSTMAN_01\",\n    \"HoTen\": \"Nhan vien Postman\",\n    \"MaPhongBan\": \"PBHCM01\",\n    \"MaChucVu\": \"CV01\"\n  },\n  \"node\": \"node-hcm\"\n}"
+                                                               },
+                                                      "url":  "{{base_url}}/publisher/ingest",
+                                                      "description":  "Publisher tiep nhan du lieu tu node."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });",
+                                                                                    "const d = pm.response.json();",
+                                                                                    "pm.test(\u0027accepted true\u0027, function(){ pm.expect(d.accepted).to.be.true; });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "GET Company Search",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{base_url}}/publisher/company-search?keyword=NV",
+                                                      "description":  "Tra cuu nhan su toan cong ty."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "GET Summary Report",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{base_url}}/publisher/reports/summary",
+                                                      "description":  "Bao cao tong hop toan he thong."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });",
+                                                                                    "const d = pm.response.json();",
+                                                                                    "pm.test(\u0027Co truong summary\u0027, function(){ pm.expect(d).to.have.property(\u0027employeeByBranch\u0027); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "GET Sync Monitor",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{base_url}}/publisher/sync-monitor?thresholdMinutes=30",
+                                                      "description":  "Giam sat dong bo node."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  }
+                              ]
+                 },
+                 {
+                     "name":  "Node HCM",
+                     "description":  "Endpoint Node HCM (6.2).",
+                     "item":  [
+                                  {
+                                      "name":  "POST Employee (HCM)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"maNhanVien\": \"NVHCM001\",\n  \"hoTen\": \"Nhan vien HCM 01\",\n  \"ngaySinh\": \"1997-03-10\",\n  \"gioiTinh\": \"Nam\",\n  \"sdt\": \"0909000011\",\n  \"email\": \"hcm01@example.com\",\n  \"maPhongBan\": \"PBHCM01\",\n  \"maChucVu\": \"CV01\",\n  \"ngayVaoLam\": \"2026-01-10\",\n  \"maChiNhanh\": \"CNHCM\"\n}"
+                                                               },
+                                                      "url":  "{{node_hcm_url}}/node/employees",
+                                                      "description":  "Tao nhan vien tai node HCM."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 201/200\u0027, function(){ pm.expect([200,201]).to.include(pm.response.code); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "POST Contract (HCM)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"maHopDong\": \"HDHCM001\",\n  \"maNhanVien\": \"NVHCM001\",\n  \"maLoaiHopDong\": \"LHD02\",\n  \"ngayBatDau\": \"2026-01-10\",\n  \"ngayKetThuc\": \"2027-01-09\",\n  \"trangThai\": \"Hieu luc\"\n}"
+                                                               },
+                                                      "url":  "{{node_hcm_url}}/node/contracts",
+                                                      "description":  "Tao hop dong tai node HCM."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 201/200\u0027, function(){ pm.expect([200,201]).to.include(pm.response.code); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "POST Check-in (HCM)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"maNhanVien\": \"NVHCM001\",\n  \"ngay\": \"2026-04-14\",\n  \"gioVao\": \"08:05:00\"\n}"
+                                                               },
+                                                      "url":  "{{node_hcm_url}}/node/attendance/check-in",
+                                                      "description":  "Cham cong check-in HCM."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "POST Check-out (HCM)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"maNhanVien\": \"NVHCM001\",\n  \"ngay\": \"2026-04-14\",\n  \"gioRa\": \"17:35:00\"\n}"
+                                                               },
+                                                      "url":  "{{node_hcm_url}}/node/attendance/check-out",
+                                                      "description":  "Cham cong check-out HCM."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "POST Leave Request (HCM)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"maNhanVien\": \"NVHCM001\",\n  \"tuNgay\": \"2026-04-20\",\n  \"denNgay\": \"2026-04-21\",\n  \"lyDo\": \"Viec rieng\"\n}"
+                                                               },
+                                                      "url":  "{{node_hcm_url}}/node/leaves",
+                                                      "description":  "Tao don nghi phep HCM."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 201/200\u0027, function(){ pm.expect([200,201]).to.include(pm.response.code); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "PUT Leave Approval (HCM)",
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"trangThai\": \"DA_DUYET\"\n}"
+                                                               },
+                                                      "url":  "{{node_hcm_url}}/node/leaves/1/approval",
+                                                      "description":  "Duyet don nghi phep HCM."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "POST Generate Salary (HCM)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"maNhanVien\": \"NVHCM001\",\n  \"thang\": 4,\n  \"nam\": 2026,\n  \"phuCap\": 1200000,\n  \"thuong\": 1500000,\n  \"khauTru\": 300000\n}"
+                                                               },
+                                                      "url":  "{{node_hcm_url}}/node/salaries/generate",
+                                                      "description":  "Tinh luong node HCM."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "GET Local Report (HCM)",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{node_hcm_url}}/node/reports/local?keyword=NVHCM001\u0026thang=4\u0026nam=2026",
+                                                      "description":  "Bao cao cuc bo node HCM."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });",
+                                                                                    "const d = pm.response.json();",
+                                                                                    "pm.test(\u0027Co 3 nhom du lieu\u0027, function(){ pm.expect(d).to.have.property(\u0027employees\u0027); pm.expect(d).to.have.property(\u0027attendance\u0027); pm.expect(d).to.have.property(\u0027payroll\u0027); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  }
+                              ]
+                 },
+                 {
+                     "name":  "Node HN",
+                     "description":  "Endpoint Node HN (6.2) - bo request tuong tu HCM de test node thu 2.",
+                     "item":  [
+                                  {
+                                      "name":  "POST Employee (HN)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"maNhanVien\": \"NVHN001\",\n  \"hoTen\": \"Nhan vien HN 01\",\n  \"ngaySinh\": \"1999-05-11\",\n  \"gioiTinh\": \"Nu\",\n  \"sdt\": \"0909000022\",\n  \"email\": \"hn01@example.com\",\n  \"maPhongBan\": \"PBHN01\",\n  \"maChucVu\": \"CV01\",\n  \"ngayVaoLam\": \"2026-01-10\",\n  \"maChiNhanh\": \"CNHN\"\n}"
+                                                               },
+                                                      "url":  "{{node_hn_url}}/node/employees",
+                                                      "description":  "Tao nhan vien tai node HN."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 201/200\u0027, function(){ pm.expect([200,201]).to.include(pm.response.code); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "POST Contract (HN)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"maHopDong\": \"HDHN001\",\n  \"maNhanVien\": \"NVHN001\",\n  \"maLoaiHopDong\": \"LHD02\",\n  \"ngayBatDau\": \"2026-01-10\",\n  \"ngayKetThuc\": \"2027-01-09\",\n  \"trangThai\": \"Hieu luc\"\n}"
+                                                               },
+                                                      "url":  "{{node_hn_url}}/node/contracts",
+                                                      "description":  "Tao hop dong tai node HN."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 201/200\u0027, function(){ pm.expect([200,201]).to.include(pm.response.code); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "POST Check-in (HN)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"maNhanVien\": \"NVHN001\",\n  \"ngay\": \"2026-04-14\",\n  \"gioVao\": \"08:02:00\"\n}"
+                                                               },
+                                                      "url":  "{{node_hn_url}}/node/attendance/check-in",
+                                                      "description":  "Cham cong check-in HN."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "POST Check-out (HN)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"maNhanVien\": \"NVHN001\",\n  \"ngay\": \"2026-04-14\",\n  \"gioRa\": \"17:40:00\"\n}"
+                                                               },
+                                                      "url":  "{{node_hn_url}}/node/attendance/check-out",
+                                                      "description":  "Cham cong check-out HN."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "POST Leave Request (HN)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"maNhanVien\": \"NVHN001\",\n  \"tuNgay\": \"2026-04-22\",\n  \"denNgay\": \"2026-04-23\",\n  \"lyDo\": \"Viec gia dinh\"\n}"
+                                                               },
+                                                      "url":  "{{node_hn_url}}/node/leaves",
+                                                      "description":  "Tao don nghi phep HN."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 201/200\u0027, function(){ pm.expect([200,201]).to.include(pm.response.code); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "PUT Leave Approval (HN)",
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"trangThai\": \"DA_DUYET\"\n}"
+                                                               },
+                                                      "url":  "{{node_hn_url}}/node/leaves/1/approval",
+                                                      "description":  "Duyet don nghi phep HN."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "POST Generate Salary (HN)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"maNhanVien\": \"NVHN001\",\n  \"thang\": 4,\n  \"nam\": 2026,\n  \"phuCap\": 900000,\n  \"thuong\": 1000000,\n  \"khauTru\": 200000\n}"
+                                                               },
+                                                      "url":  "{{node_hn_url}}/node/salaries/generate",
+                                                      "description":  "Tinh luong node HN."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "GET Local Report (HN)",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{node_hn_url}}/node/reports/local?keyword=NVHN001\u0026thang=4\u0026nam=2026",
+                                                      "description":  "Bao cao cuc bo node HN."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  }
+                              ]
+                 },
+                 {
+                     "name":  "Sync",
+                     "description":  "Kich ban dong bo 2 chieu giua Publisher va 2 Node.",
+                     "item":  [
+                                  {
+                                      "name":  "HCM -\u003e Publisher Sync",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{node_hcm_url}}/sync/node-to-publisher",
+                                                      "description":  "Day thay doi tu Node HCM len Publisher."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });",
+                                                                                    "const d = pm.response.json();",
+                                                                                    "pm.test(\u0027Co thong ke sync\u0027, function(){ pm.expect(d).to.have.property(\u0027total\u0027); pm.expect(d).to.have.property(\u0027synced\u0027); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "Publisher -\u003e HCM Sync",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{node_hcm_url}}/sync/publisher-to-node",
+                                                      "description":  "Keo du lieu master tu Publisher ve Node HCM."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "HN -\u003e Publisher Sync",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{node_hn_url}}/sync/node-to-publisher",
+                                                      "description":  "Day thay doi tu Node HN len Publisher."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "Publisher -\u003e HN Sync",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{node_hn_url}}/sync/publisher-to-node",
+                                                      "description":  "Keo du lieu master tu Publisher ve Node HN."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "Publisher Sync Monitor",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  "{{base_url}}/publisher/sync-monitor?thresholdMinutes=30",
+                                                      "description":  "Theo doi trang thai dong bo cua node HCM va HN tu Publisher."
+                                                  },
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "type":  "text/javascript",
+                                                                       "exec":  [
+                                                                                    "pm.test(\u0027Status 200\u0027, function(){ pm.response.to.have.status(200); });"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  }
+                              ]
+                 }
+             ]
+}

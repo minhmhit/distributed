@@ -5,6 +5,7 @@ export type AppEnv = {
   port: number;
   mode: AppMode;
   syncNodeName: string;
+  jwtSecret: string;
   globalDb: {
     host: string;
     port: number;

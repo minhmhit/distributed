@@ -1,5 +1,6 @@
 import sql from "mssql";
 import { getGlobalDbPool } from "../config/database";
+import { hashPassword } from "./common";
 
 const SUPPORTED_UPSERT_TABLES = {
   ChiNhanh: "MaChiNhanh",
@@ -197,11 +198,12 @@ export async function createUserAccount(input: {
   maChiNhanh?: string;
 }) {
   const pool = getGlobalDbPool();
+  const hashedPassword = await hashPassword(input.password);
 
   await pool
     .request()
     .input("Username", sql.VarChar(50), input.username)
-    .input("Password", sql.VarChar(100), input.password)
+    .input("Password", sql.VarChar(100), hashedPassword)
     .input("MaRole", sql.VarChar(10), input.maRole)
     .input("MaChiNhanh", sql.VarChar(10), input.maChiNhanh ?? null)
     .query(

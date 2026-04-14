@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import { z } from "zod";
 import { AppEnv } from "../types/env";
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 const schema = z.object({
   NODE_ENV: z
@@ -76,5 +76,5 @@ export function getAppEnv(): AppEnv {
     },
   };
 
-  return cachedEnv;
+  return cachedEnv as AppEnv;
 }

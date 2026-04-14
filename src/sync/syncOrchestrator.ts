@@ -1,3 +1,5 @@
-export async function runSyncCycle(): Promise<void> {
-  // Placeholder cho buoc tiep theo: dong bo 2 chieu node <-> publisher.
+import { runFullSyncCycle } from "./syncService";
+
+export async function runSyncCycle() {
+  return runFullSyncCycle();
 }

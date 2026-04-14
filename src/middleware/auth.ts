@@ -1,5 +1,9 @@
 import { NextFunction, Request, Response } from "express";
-import { authorizeRequest, extractAuthContext } from "../services/common";
+import {
+  authorizeRequest,
+  extractAuthContext,
+  verifyToken,
+} from "../services/common";
 
 type AuthOptions = {
   enforceBranchScope?: boolean;
@@ -8,10 +12,29 @@ type AuthOptions = {
 
 export function attachAuthContext(
   request: Request,
-  _response: Response,
+  response: Response,
   next: NextFunction,
 ): void {
-  request.auth = extractAuthContext(request);
+  const authorization = request.header("authorization");
+  if (authorization?.toLowerCase().startsWith("bearer ")) {
+    const token = authorization.slice(7).trim();
+    const verified = verifyToken(token);
+
+    if (!verified) {
+      response.status(401).json({ message: "Unauthorized: invalid token" });
+      return;
+    }
+
+    request.auth = verified;
+    next();
+    return;
+  }
+
+  // Backward compatibility for internal tests and legacy callers.
+  if (request.header("x-user-role")) {
+    request.auth = extractAuthContext(request);
+  }
+
   next();
 }
 

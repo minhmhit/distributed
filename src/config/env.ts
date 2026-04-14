@@ -11,6 +11,7 @@ const schema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   MODE: z.enum(["publisher", "node"]),
   SYNC_NODE_NAME: z.string().min(1).default("node-unknown"),
+  JWT_SECRET: z.string().min(16).default("change-this-jwt-secret-now"),
 
   GLOBAL_DB_HOST: z.string().min(1),
   GLOBAL_DB_PORT: z.coerce.number().int().positive().default(1433),
@@ -54,6 +55,7 @@ export function getAppEnv(): AppEnv {
     port: parsed.data.PORT,
     mode: parsed.data.MODE,
     syncNodeName: parsed.data.SYNC_NODE_NAME,
+    jwtSecret: parsed.data.JWT_SECRET,
     globalDb: {
       host: parsed.data.GLOBAL_DB_HOST,
       port: parsed.data.GLOBAL_DB_PORT,

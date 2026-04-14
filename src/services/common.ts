@@ -1,7 +1,9 @@
 import { Request } from "express";
 import sql from "mssql";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import { getCurrentDbPool } from "../config/database";
+import { getAppEnv } from "../config/env";
 import { AuthContext } from "../types/auth";
 
 type BranchScopeOptions = {
@@ -28,6 +30,41 @@ export function extractAuthContext(request: Request): AuthContext {
   const branchCode = request.header("x-user-branch") ?? undefined;
 
   return { username, role, branchCode };
+}
+
+export function generateToken(auth: AuthContext): string {
+  const env = getAppEnv();
+
+  return jwt.sign(
+    {
+      username: auth.username,
+      role: auth.role,
+      maRole: auth.maRole,
+      maChiNhanh: auth.branchCode,
+    },
+    env.jwtSecret,
+    { expiresIn: "8h" },
+  );
+}
+
+export function verifyToken(token: string): AuthContext | null {
+  try {
+    const env = getAppEnv();
+    const payload = jwt.verify(token, env.jwtSecret) as jwt.JwtPayload;
+
+    if (!payload?.username || !payload?.role) {
+      return null;
+    }
+
+    return {
+      username: String(payload.username),
+      role: normalizeRole(String(payload.role)),
+      maRole: payload.maRole ? String(payload.maRole) : undefined,
+      branchCode: payload.maChiNhanh ? String(payload.maChiNhanh) : undefined,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function pickBranchFromRequest(
@@ -107,6 +144,7 @@ export async function authenticateUser(input: {
     .input("Username", sql.VarChar(50), input.username)
     .query(
       `SELECT u.Username, u.Password, r.TenRole, u.MaChiNhanh
+              ,u.MaRole
        FROM Users u
        LEFT JOIN Role r ON r.MaRole = u.MaRole
        WHERE u.Username = @Username`,
@@ -125,6 +163,7 @@ export async function authenticateUser(input: {
   return {
     username: user.Username as string,
     role: normalizeRole((user.TenRole as string) ?? "viewer"),
+    maRole: (user.MaRole as string | null) ?? undefined,
     branchCode: (user.MaChiNhanh as string | null) ?? undefined,
   };
 }

@@ -1,2 +1,9 @@
 *.md
 .github/
+package-lock.json
+node_modules/
+dist/
+coverage/
+.env.example
+.env    
+.tests/

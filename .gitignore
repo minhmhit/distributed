@@ -6,4 +6,4 @@ dist/
 coverage/
 .env.example
 .env    
-.tests/
+tests/

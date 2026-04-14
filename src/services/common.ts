@@ -1,5 +1,6 @@
 import { Request } from "express";
 import sql from "mssql";
+import bcrypt from "bcryptjs";
 import { getCurrentDbPool } from "../config/database";
 import { AuthContext } from "../types/auth";
 
@@ -15,6 +16,7 @@ type AuthorizationResult = {
 };
 
 const DEFAULT_BRANCH_KEYS = ["maChiNhanh"];
+const BCRYPT_SALT_ROUNDS = 10;
 
 function normalizeRole(role: string): string {
   return role.trim().toLowerCase();
@@ -103,16 +105,20 @@ export async function authenticateUser(input: {
   const result = await pool
     .request()
     .input("Username", sql.VarChar(50), input.username)
-    .input("Password", sql.VarChar(100), input.password)
     .query(
-      `SELECT u.Username, r.TenRole, u.MaChiNhanh
+      `SELECT u.Username, u.Password, r.TenRole, u.MaChiNhanh
        FROM Users u
        LEFT JOIN Role r ON r.MaRole = u.MaRole
-       WHERE u.Username = @Username AND u.Password = @Password`,
+       WHERE u.Username = @Username`,
     );
 
   const user = result.recordset[0];
   if (!user) {
+    return null;
+  }
+
+  const matched = await verifyPassword(input.password, user.Password as string);
+  if (!matched) {
     return null;
   }
 
@@ -121,4 +127,16 @@ export async function authenticateUser(input: {
     role: normalizeRole((user.TenRole as string) ?? "viewer"),
     branchCode: (user.MaChiNhanh as string | null) ?? undefined,
   };
+}
+
+// Hash password truoc khi luu DB, khong luu plain text.
+export async function hashPassword(plainPassword: string): Promise<string> {
+  return bcrypt.hash(plainPassword, BCRYPT_SALT_ROUNDS);
+}
+
+export async function verifyPassword(
+  plainPassword: string,
+  hashedPassword: string,
+): Promise<boolean> {
+  return bcrypt.compare(plainPassword, hashedPassword);
 }

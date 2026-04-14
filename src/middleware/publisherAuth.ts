@@ -37,6 +37,21 @@ export function requirePublisherRole(allowedRoles: string[]) {
   };
 }
 
+export function requireNodeRole(allowedRoles: string[]) {
+  return (request: Request, response: Response, next: NextFunction): void => {
+    const auth = request.auth as AuthContext | undefined;
+
+    if (!auth || !allowedRoles.includes(auth.role)) {
+      response.status(403).json({
+        message: "Forbidden: node role is not allowed",
+      });
+      return;
+    }
+
+    next();
+  };
+}
+
 export function enforceBranchScope(
   request: Request,
   response: Response,

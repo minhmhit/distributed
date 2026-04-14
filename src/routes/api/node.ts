@@ -9,11 +9,7 @@ import {
   generateSalaryController,
   localSearchReportController,
 } from "../../controllers/nodeController";
-import {
-  attachAuthContext,
-  enforceBranchScope,
-  requireNodeRole,
-} from "../../middleware/publisherAuth";
+import { attachAuthContext, requireRoles } from "../../middleware/auth";
 
 const nodeRoutes = Router();
 
@@ -21,50 +17,51 @@ nodeRoutes.use(attachAuthContext);
 
 nodeRoutes.post(
   "/node/employees",
-  requireNodeRole(["admin", "node_admin", "hr_manager"]),
-  enforceBranchScope,
+  requireRoles(["admin", "node_admin", "hr_manager"], {
+    enforceBranchScope: true,
+  }),
   createEmployeeController,
 );
 
 nodeRoutes.post(
   "/node/contracts",
-  requireNodeRole(["admin", "node_admin", "hr_manager"]),
+  requireRoles(["admin", "node_admin", "hr_manager"]),
   createContractController,
 );
 
 nodeRoutes.post(
   "/node/attendance/check-in",
-  requireNodeRole(["admin", "node_admin", "hr_manager", "staff"]),
+  requireRoles(["admin", "node_admin", "hr_manager", "staff"]),
   checkInAttendanceController,
 );
 
 nodeRoutes.post(
   "/node/attendance/check-out",
-  requireNodeRole(["admin", "node_admin", "hr_manager", "staff"]),
+  requireRoles(["admin", "node_admin", "hr_manager", "staff"]),
   checkOutAttendanceController,
 );
 
 nodeRoutes.post(
   "/node/leaves",
-  requireNodeRole(["admin", "node_admin", "hr_manager", "staff"]),
+  requireRoles(["admin", "node_admin", "hr_manager", "staff"]),
   createLeaveRequestController,
 );
 
 nodeRoutes.put(
   "/node/leaves/:maNghiPhep/approval",
-  requireNodeRole(["admin", "node_admin", "hr_manager"]),
+  requireRoles(["admin", "node_admin", "hr_manager"]),
   approveLeaveController,
 );
 
 nodeRoutes.post(
   "/node/salaries/generate",
-  requireNodeRole(["admin", "node_admin", "hr_manager"]),
+  requireRoles(["admin", "node_admin", "hr_manager"]),
   generateSalaryController,
 );
 
 nodeRoutes.get(
   "/node/reports/local",
-  requireNodeRole(["admin", "node_admin", "hr_manager", "viewer"]),
+  requireRoles(["admin", "node_admin", "hr_manager", "viewer"]),
   localSearchReportController,
 );
 

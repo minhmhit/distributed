@@ -8,4 +8,7 @@ coverage/
 .env    
 tests/
 report/
+.env.publisher
+.env.hcm
+.env.hn
 

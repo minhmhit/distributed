@@ -103,6 +103,81 @@ BEGIN
   VALUES ('PBHN02', N'Ke toan', 'CNHN');
 END;
 
+IF NOT EXISTS (SELECT 1 FROM dbo.NhanVien WHERE MaNhanVien = 'NVHCM001')
+BEGIN
+  INSERT INTO dbo.NhanVien
+    (MaNhanVien, HoTen, NgaySinh, GioiTinh, SDT, Email, MaPhongBan, MaChucVu, NgayVaoLam, TrangThai)
+  VALUES
+    ('NVHCM001', N'Nguyen Minh Khang', '1996-03-15', N'Nam', '0903123456', 'khang.nm@company.local', 'PBHCM01', 'CV02', '2022-06-01', N'Dang lam');
+END;
+IF NOT EXISTS (SELECT 1 FROM dbo.NhanVien WHERE MaNhanVien = 'NVHCM002')
+BEGIN
+  INSERT INTO dbo.NhanVien
+    (MaNhanVien, HoTen, NgaySinh, GioiTinh, SDT, Email, MaPhongBan, MaChucVu, NgayVaoLam, TrangThai)
+  VALUES
+    ('NVHCM002', N'Tran Thu Ha', '1998-11-22', N'Nu', '0904234567', 'ha.tt@company.local', 'PBHCM02', 'CV01', '2023-01-10', N'Dang lam');
+END;
+IF NOT EXISTS (SELECT 1 FROM dbo.NhanVien WHERE MaNhanVien = 'NVHCM003')
+BEGIN
+  INSERT INTO dbo.NhanVien
+    (MaNhanVien, HoTen, NgaySinh, GioiTinh, SDT, Email, MaPhongBan, MaChucVu, NgayVaoLam, TrangThai)
+  VALUES
+    ('NVHCM003', N'Le Hoang Long', '1994-08-08', N'Nam', '0905345678', 'long.lh@company.local', 'PBHCM02', 'CV03', '2021-09-15', N'Dang lam');
+END;
+
+IF NOT EXISTS (SELECT 1 FROM dbo.NhanVien WHERE MaNhanVien = 'NVHN001')
+BEGIN
+  INSERT INTO dbo.NhanVien
+    (MaNhanVien, HoTen, NgaySinh, GioiTinh, SDT, Email, MaPhongBan, MaChucVu, NgayVaoLam, TrangThai)
+  VALUES
+    ('NVHN001', N'Pham Quynh Anh', '1997-05-30', N'Nu', '0912456789', 'anh.pq@company.local', 'PBHN01', 'CV02', '2022-04-20', N'Dang lam');
+END;
+IF NOT EXISTS (SELECT 1 FROM dbo.NhanVien WHERE MaNhanVien = 'NVHN002')
+BEGIN
+  INSERT INTO dbo.NhanVien
+    (MaNhanVien, HoTen, NgaySinh, GioiTinh, SDT, Email, MaPhongBan, MaChucVu, NgayVaoLam, TrangThai)
+  VALUES
+    ('NVHN002', N'Do Van Tien', '1995-12-11', N'Nam', '0913567890', 'tien.dv@company.local', 'PBHN02', 'CV01', '2023-02-01', N'Dang lam');
+END;
+IF NOT EXISTS (SELECT 1 FROM dbo.NhanVien WHERE MaNhanVien = 'NVHN003')
+BEGIN
+  INSERT INTO dbo.NhanVien
+    (MaNhanVien, HoTen, NgaySinh, GioiTinh, SDT, Email, MaPhongBan, MaChucVu, NgayVaoLam, TrangThai)
+  VALUES
+    ('NVHN003', N'Bui Gia Bao', '1993-01-19', N'Nam', '0914678901', 'bao.bg@company.local', 'PBHN02', 'CV03', '2020-11-05', N'Dang lam');
+END;
+
+IF NOT EXISTS (SELECT 1 FROM dbo.HopDong WHERE MaHopDong = 'HDNV001')
+BEGIN
+  INSERT INTO dbo.HopDong (MaHopDong, MaNhanVien, MaLoaiHopDong, NgayBatDau, NgayKetThuc, TrangThai)
+  VALUES ('HDNV001', 'NVHCM001', 'LHD03', '2022-06-01', NULL, N'Hieu luc');
+END;
+IF NOT EXISTS (SELECT 1 FROM dbo.HopDong WHERE MaHopDong = 'HDNV002')
+BEGIN
+  INSERT INTO dbo.HopDong (MaHopDong, MaNhanVien, MaLoaiHopDong, NgayBatDau, NgayKetThuc, TrangThai)
+  VALUES ('HDNV002', 'NVHCM002', 'LHD02', '2023-01-10', '2024-01-09', N'Het han');
+END;
+IF NOT EXISTS (SELECT 1 FROM dbo.HopDong WHERE MaHopDong = 'HDNV003')
+BEGIN
+  INSERT INTO dbo.HopDong (MaHopDong, MaNhanVien, MaLoaiHopDong, NgayBatDau, NgayKetThuc, TrangThai)
+  VALUES ('HDNV003', 'NVHCM003', 'LHD03', '2021-09-15', NULL, N'Hieu luc');
+END;
+IF NOT EXISTS (SELECT 1 FROM dbo.HopDong WHERE MaHopDong = 'HDNV004')
+BEGIN
+  INSERT INTO dbo.HopDong (MaHopDong, MaNhanVien, MaLoaiHopDong, NgayBatDau, NgayKetThuc, TrangThai)
+  VALUES ('HDNV004', 'NVHN001', 'LHD03', '2022-04-20', NULL, N'Hieu luc');
+END;
+IF NOT EXISTS (SELECT 1 FROM dbo.HopDong WHERE MaHopDong = 'HDNV005')
+BEGIN
+  INSERT INTO dbo.HopDong (MaHopDong, MaNhanVien, MaLoaiHopDong, NgayBatDau, NgayKetThuc, TrangThai)
+  VALUES ('HDNV005', 'NVHN002', 'LHD02', '2023-02-01', '2024-01-31', N'Het han');
+END;
+IF NOT EXISTS (SELECT 1 FROM dbo.HopDong WHERE MaHopDong = 'HDNV006')
+BEGIN
+  INSERT INTO dbo.HopDong (MaHopDong, MaNhanVien, MaLoaiHopDong, NgayBatDau, NgayKetThuc, TrangThai)
+  VALUES ('HDNV006', 'NVHN003', 'LHD03', '2020-11-05', NULL, N'Hieu luc');
+END;
+
 IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE Username = 'publisher_admin')
 BEGIN
   -- Password goc: 123456 (da duoc hash bang bcrypt).

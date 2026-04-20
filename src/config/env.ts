@@ -1,8 +1,19 @@
+import fs from "fs";
+import path from "path";
 import dotenv from "dotenv";
 import { z } from "zod";
 import { AppEnv } from "../types/env";
 
-dotenv.config({ quiet: true });
+const requestedEnvFile = process.env.ENV_FILE?.trim();
+const resolvedEnvFile = requestedEnvFile
+  ? path.resolve(process.cwd(), requestedEnvFile)
+  : path.resolve(process.cwd(), ".env");
+
+if (fs.existsSync(resolvedEnvFile)) {
+  dotenv.config({ path: resolvedEnvFile, quiet: true });
+} else {
+  dotenv.config({ quiet: true });
+}
 
 const schema = z.object({
   NODE_ENV: z

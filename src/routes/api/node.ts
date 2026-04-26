@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  calculateSalaryController,
   approveLeaveController,
   checkInAttendanceController,
   checkOutAttendanceController,
@@ -57,6 +58,12 @@ nodeRoutes.post(
   "/node/salaries/generate",
   requireRoles(["admin", "node_admin", "hr_manager"]),
   generateSalaryController,
+);
+
+nodeRoutes.post(
+  "/node/luong/tinh-luong",
+  requireRoles(["admin", "node_admin", "hr_manager"]),
+  calculateSalaryController,
 );
 
 nodeRoutes.get(

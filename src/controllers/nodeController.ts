@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
 import {
+  calculateSalary,
   checkInAttendance,
   checkOutAttendance,
   createContract,
   createEmployee,
   createLeaveRequest,
-  generateSalary,
   localSearchAndReport,
   updateLeaveApproval,
 } from "../services/nodeService";
@@ -99,7 +99,19 @@ export async function generateSalaryController(
   response: Response,
 ): Promise<void> {
   try {
-    const result = await generateSalary(request.body);
+    const result = await calculateSalary(request.body);
+    response.status(200).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function calculateSalaryController(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const result = await calculateSalary(request.body);
     response.status(200).json(result);
   } catch (error) {
     handleControllerError(response, error);

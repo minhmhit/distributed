@@ -4,6 +4,21 @@ import { getAppEnv } from "../config/env";
 import { hashPassword } from "./common";
 
 type AttendanceStatus = "CHECKED_IN" | "CHECKED_OUT" | "LATE" | "ON_TIME";
+const BASE_SALARY_PER_HE_SO = 10000000;
+
+function resolveNodeBranchCode(syncNodeName: string): string {
+  const normalized = syncNodeName.trim().toLowerCase();
+
+  if (normalized.includes("hcm")) {
+    return "CNHCM";
+  }
+
+  if (normalized.includes("hn")) {
+    return "CNHN";
+  }
+
+  throw new Error("Khong xac dinh duoc chi nhanh node tu SYNC_NODE_NAME");
+}
 
 async function writeLocalSyncLog(
   tableName: string,
@@ -254,7 +269,7 @@ export async function createLeaveRequest(input: {
     denNgay: result.recordset[0]?.DenNgay,
     lydo: result.recordset[0]?.LyDo,
     trangThai: result.recordset[0]?.TrangThai,
-  }
+  };
   await writeLocalSyncLog("NghiPhep", "INSERT", String(maNghiPhep));
 
   return data;
@@ -288,19 +303,66 @@ export async function generateSalary(input: {
   thuong?: number;
   khauTru?: number;
 }) {
-  const pool = getLocalDbPool();
+  return calculateSalary(input);
+}
 
-  const baseSalaryResult = await pool
+export async function calculateSalary(input: {
+  maNhanVien: string;
+  thang: number;
+  nam: number;
+  phuCap?: number;
+  thuong?: number;
+  khauTru?: number;
+}) {
+  const pool = getLocalDbPool();
+  const env = getAppEnv();
+  const nodeBranchCode = resolveNodeBranchCode(env.syncNodeName);
+
+  const employeeResult = await pool
     .request()
     .input("MaNhanVien", sql.VarChar(10), input.maNhanVien)
+    .input("MaChiNhanh", sql.VarChar(10), nodeBranchCode)
     .query(
-      `SELECT TOP 1 ISNULL(cv.HeSoLuong, 1) * 10000000 AS LuongCoBan
+      `SELECT TOP 1
+              nv.MaNhanVien,
+              pb.MaChiNhanh,
+              ISNULL(cv.HeSoLuong, 1) AS HeSoLuong,
+              ISNULL(cv.HeSoLuong, 1) * ${BASE_SALARY_PER_HE_SO} AS LuongCoBan
        FROM NhanVien nv
+       INNER JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
        LEFT JOIN ChucVu cv ON cv.MaChucVu = nv.MaChucVu
-       WHERE nv.MaNhanVien = @MaNhanVien`,
+       WHERE nv.MaNhanVien = @MaNhanVien
+         AND pb.MaChiNhanh = @MaChiNhanh`,
     );
 
-  const luongCoBan = Number(baseSalaryResult.recordset[0]?.LuongCoBan ?? 0);
+  const employee = employeeResult.recordset[0];
+  if (!employee) {
+    throw new Error("Nhan vien khong thuoc chi nhanh node hien tai");
+  }
+
+  const heSoLuong = Number(employee.HeSoLuong ?? 1);
+  const luongCoBan = Number(employee.LuongCoBan ?? 0);
+
+  const attendanceResult = await pool
+    .request()
+    .input("MaNhanVien", sql.VarChar(10), input.maNhanVien)
+    .input("Thang", sql.Int, input.thang)
+    .input("Nam", sql.Int, input.nam)
+    .query(
+      `SELECT COUNT(1) AS SoNgayCong
+       FROM ChamCong
+       WHERE MaNhanVien = @MaNhanVien
+         AND MONTH(Ngay) = @Thang
+         AND YEAR(Ngay) = @Nam
+         AND GioVao IS NOT NULL
+         AND GioRa IS NOT NULL`,
+    );
+
+  const soNgayCong = Number(attendanceResult.recordset[0]?.SoNgayCong ?? 0);
+  const phuCap = Number(input.phuCap ?? 0);
+  const thuong = Number(input.thuong ?? 0);
+  const khauTru = Number(input.khauTru ?? 0);
+  const tongLuong = (luongCoBan / 26) * soNgayCong + phuCap + thuong - khauTru;
 
   await pool
     .request()
@@ -308,9 +370,9 @@ export async function generateSalary(input: {
     .input("Thang", sql.Int, input.thang)
     .input("Nam", sql.Int, input.nam)
     .input("LuongCoBan", sql.Float, luongCoBan)
-    .input("PhuCap", sql.Float, input.phuCap ?? 0)
-    .input("Thuong", sql.Float, input.thuong ?? 0)
-    .input("KhauTru", sql.Float, input.khauTru ?? 0)
+    .input("PhuCap", sql.Float, phuCap)
+    .input("Thuong", sql.Float, thuong)
+    .input("KhauTru", sql.Float, khauTru)
     .query(
       `IF EXISTS (SELECT 1 FROM Luong WHERE MaNhanVien = @MaNhanVien AND Thang = @Thang AND Nam = @Nam)
        BEGIN
@@ -338,7 +400,14 @@ export async function generateSalary(input: {
     maNhanVien: input.maNhanVien,
     thang: input.thang,
     nam: input.nam,
+    maChiNhanh: nodeBranchCode,
+    heSoLuong,
     luongCoBan,
+    soNgayCong,
+    phuCap,
+    thuong,
+    khauTru,
+    tongLuong,
   };
 }
 

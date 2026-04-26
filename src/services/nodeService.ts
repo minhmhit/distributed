@@ -6,6 +6,21 @@ import { hashPassword } from "./common";
 type AttendanceStatus = "CHECKED_IN" | "CHECKED_OUT" | "LATE" | "ON_TIME";
 const BASE_SALARY_PER_HE_SO = 10000000;
 
+type NodePaginationParams = {
+  page: number;
+  limit: number;
+  keyword?: string;
+  thang?: number;
+  nam?: number;
+};
+
+type PaginatedResult<T> = {
+  page: number;
+  limit: number;
+  total: number;
+  data: T[];
+};
+
 function resolveNodeBranchCode(syncNodeName: string): string {
   const normalized = syncNodeName.trim().toLowerCase();
 
@@ -18,6 +33,10 @@ function resolveNodeBranchCode(syncNodeName: string): string {
   }
 
   throw new Error("Khong xac dinh duoc chi nhanh node tu SYNC_NODE_NAME");
+}
+
+function getCurrentNodeBranchCode(): string {
+  return resolveNodeBranchCode(getAppEnv().syncNodeName);
 }
 
 async function writeLocalSyncLog(
@@ -455,4 +474,193 @@ export async function localSearchAndReport(input: {
     attendance: attendance.recordset,
     payroll: payroll.recordset,
   };
+}
+
+export async function getNodeResource(
+  tableName: string,
+  params: NodePaginationParams,
+): Promise<PaginatedResult<Record<string, unknown>>> {
+  const pool = getLocalDbPool();
+  const nodeBranchCode = getCurrentNodeBranchCode();
+  const offset = (params.page - 1) * params.limit;
+  const keyword = `%${params.keyword ?? ""}%`;
+
+  if (tableName === "nhanvien") {
+    const countResult = await pool
+      .request()
+      .input("MaChiNhanh", sql.VarChar(10), nodeBranchCode)
+      .input("Keyword", sql.NVarChar(150), keyword)
+      .query(
+        `SELECT COUNT(1) AS Total
+         FROM NhanVien nv
+         INNER JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
+         WHERE pb.MaChiNhanh = @MaChiNhanh
+           AND (@Keyword = '%%' OR nv.MaNhanVien LIKE @Keyword OR nv.HoTen LIKE @Keyword OR nv.Email LIKE @Keyword)`,
+      );
+
+    const dataResult = await pool
+      .request()
+      .input("MaChiNhanh", sql.VarChar(10), nodeBranchCode)
+      .input("Keyword", sql.NVarChar(150), keyword)
+      .input("Offset", sql.Int, offset)
+      .input("Limit", sql.Int, params.limit)
+      .query(
+        `SELECT nv.MaNhanVien, nv.HoTen, nv.NgaySinh, nv.GioiTinh, nv.SDT, nv.Email,
+                nv.NgayVaoLam, nv.TrangThai,
+                nv.MaPhongBan, pb.TenPhongBan,
+                nv.MaChucVu, cv.TenChucVu,
+                pb.MaChiNhanh, cn.TenChiNhanh
+         FROM NhanVien nv
+         INNER JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
+         LEFT JOIN ChucVu cv ON cv.MaChucVu = nv.MaChucVu
+         LEFT JOIN ChiNhanh cn ON cn.MaChiNhanh = pb.MaChiNhanh
+         WHERE pb.MaChiNhanh = @MaChiNhanh
+           AND (@Keyword = '%%' OR nv.MaNhanVien LIKE @Keyword OR nv.HoTen LIKE @Keyword OR nv.Email LIKE @Keyword)
+         ORDER BY nv.MaNhanVien
+         OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY`,
+      );
+
+    return {
+      page: params.page,
+      limit: params.limit,
+      total: Number(countResult.recordset[0]?.Total ?? 0),
+      data: dataResult.recordset,
+    };
+  }
+
+  if (tableName === "hopdong") {
+    const countResult = await pool
+      .request()
+      .input("MaChiNhanh", sql.VarChar(10), nodeBranchCode)
+      .input("Keyword", sql.NVarChar(150), keyword)
+      .query(
+        `SELECT COUNT(1) AS Total
+         FROM HopDong hd
+         INNER JOIN NhanVien nv ON nv.MaNhanVien = hd.MaNhanVien
+         INNER JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
+         WHERE pb.MaChiNhanh = @MaChiNhanh
+           AND (@Keyword = '%%' OR hd.MaHopDong LIKE @Keyword OR nv.MaNhanVien LIKE @Keyword OR nv.HoTen LIKE @Keyword)`,
+      );
+
+    const dataResult = await pool
+      .request()
+      .input("MaChiNhanh", sql.VarChar(10), nodeBranchCode)
+      .input("Keyword", sql.NVarChar(150), keyword)
+      .input("Offset", sql.Int, offset)
+      .input("Limit", sql.Int, params.limit)
+      .query(
+        `SELECT hd.MaHopDong, hd.MaNhanVien, nv.HoTen,
+                hd.MaLoaiHopDong, lhd.TenLoaiHopDong,
+                hd.NgayBatDau, hd.NgayKetThuc, hd.TrangThai,
+                pb.MaChiNhanh
+         FROM HopDong hd
+         INNER JOIN NhanVien nv ON nv.MaNhanVien = hd.MaNhanVien
+         INNER JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
+         LEFT JOIN LoaiHopDong lhd ON lhd.MaLoaiHopDong = hd.MaLoaiHopDong
+         WHERE pb.MaChiNhanh = @MaChiNhanh
+           AND (@Keyword = '%%' OR hd.MaHopDong LIKE @Keyword OR nv.MaNhanVien LIKE @Keyword OR nv.HoTen LIKE @Keyword)
+         ORDER BY hd.MaHopDong
+         OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY`,
+      );
+
+    return {
+      page: params.page,
+      limit: params.limit,
+      total: Number(countResult.recordset[0]?.Total ?? 0),
+      data: dataResult.recordset,
+    };
+  }
+
+  if (tableName === "nghiphep") {
+    const countResult = await pool
+      .request()
+      .input("MaChiNhanh", sql.VarChar(10), nodeBranchCode)
+      .input("Keyword", sql.NVarChar(150), keyword)
+      .query(
+        `SELECT COUNT(1) AS Total
+         FROM NghiPhep np
+         INNER JOIN NhanVien nv ON nv.MaNhanVien = np.MaNhanVien
+         INNER JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
+         WHERE pb.MaChiNhanh = @MaChiNhanh
+           AND (@Keyword = '%%' OR nv.MaNhanVien LIKE @Keyword OR nv.HoTen LIKE @Keyword OR ISNULL(np.TrangThai, '') LIKE @Keyword)`,
+      );
+
+    const dataResult = await pool
+      .request()
+      .input("MaChiNhanh", sql.VarChar(10), nodeBranchCode)
+      .input("Keyword", sql.NVarChar(150), keyword)
+      .input("Offset", sql.Int, offset)
+      .input("Limit", sql.Int, params.limit)
+      .query(
+        `SELECT np.MaNghiPhep, np.MaNhanVien, nv.HoTen,
+                np.TuNgay, np.DenNgay, np.LyDo, np.TrangThai,
+                pb.MaChiNhanh
+         FROM NghiPhep np
+         INNER JOIN NhanVien nv ON nv.MaNhanVien = np.MaNhanVien
+         INNER JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
+         WHERE pb.MaChiNhanh = @MaChiNhanh
+           AND (@Keyword = '%%' OR nv.MaNhanVien LIKE @Keyword OR nv.HoTen LIKE @Keyword OR ISNULL(np.TrangThai, '') LIKE @Keyword)
+         ORDER BY np.MaNghiPhep DESC
+         OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY`,
+      );
+
+    return {
+      page: params.page,
+      limit: params.limit,
+      total: Number(countResult.recordset[0]?.Total ?? 0),
+      data: dataResult.recordset,
+    };
+  }
+
+  if (tableName === "luong") {
+    const countResult = await pool
+      .request()
+      .input("MaChiNhanh", sql.VarChar(10), nodeBranchCode)
+      .input("Keyword", sql.NVarChar(150), keyword)
+      .input("Thang", sql.Int, params.thang ?? null)
+      .input("Nam", sql.Int, params.nam ?? null)
+      .query(
+        `SELECT COUNT(1) AS Total
+         FROM Luong l
+         INNER JOIN NhanVien nv ON nv.MaNhanVien = l.MaNhanVien
+         INNER JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
+         WHERE pb.MaChiNhanh = @MaChiNhanh
+           AND (@Keyword = '%%' OR nv.MaNhanVien LIKE @Keyword OR nv.HoTen LIKE @Keyword)
+           AND (@Thang IS NULL OR l.Thang = @Thang)
+           AND (@Nam IS NULL OR l.Nam = @Nam)`,
+      );
+
+    const dataResult = await pool
+      .request()
+      .input("MaChiNhanh", sql.VarChar(10), nodeBranchCode)
+      .input("Keyword", sql.NVarChar(150), keyword)
+      .input("Thang", sql.Int, params.thang ?? null)
+      .input("Nam", sql.Int, params.nam ?? null)
+      .input("Offset", sql.Int, offset)
+      .input("Limit", sql.Int, params.limit)
+      .query(
+        `SELECT l.MaLuong, l.MaNhanVien, nv.HoTen,
+                l.Thang, l.Nam, l.LuongCoBan, l.PhuCap, l.Thuong, l.KhauTru,
+                (ISNULL(l.LuongCoBan,0) + ISNULL(l.PhuCap,0) + ISNULL(l.Thuong,0) - ISNULL(l.KhauTru,0)) AS TongLuong,
+                pb.MaChiNhanh
+         FROM Luong l
+         INNER JOIN NhanVien nv ON nv.MaNhanVien = l.MaNhanVien
+         INNER JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
+         WHERE pb.MaChiNhanh = @MaChiNhanh
+           AND (@Keyword = '%%' OR nv.MaNhanVien LIKE @Keyword OR nv.HoTen LIKE @Keyword)
+           AND (@Thang IS NULL OR l.Thang = @Thang)
+           AND (@Nam IS NULL OR l.Nam = @Nam)
+         ORDER BY l.Nam DESC, l.Thang DESC, l.MaNhanVien
+         OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY`,
+      );
+
+    return {
+      page: params.page,
+      limit: params.limit,
+      total: Number(countResult.recordset[0]?.Total ?? 0),
+      data: dataResult.recordset,
+    };
+  }
+
+  throw new Error("Table khong duoc ho tro tai Node");
 }

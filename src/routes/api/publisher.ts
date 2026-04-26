@@ -5,6 +5,7 @@ import {
   createBranchController,
   createContractTypeController,
   createPositionController,
+  getPublisherCategoriesController,
   ingestNodeDataController,
   listBranchesController,
   listContractTypesController,
@@ -19,6 +20,12 @@ import { attachAuthContext, requireRoles } from "../../middleware/auth";
 const publisherRoutes = Router();
 
 publisherRoutes.use(attachAuthContext);
+
+publisherRoutes.get(
+  "/publisher/categories/:tableName",
+  requireRoles(["admin", "publisher_admin", "hr_manager", "viewer"]),
+  getPublisherCategoriesController,
+);
 
 publisherRoutes.get(
   "/publisher/branches",

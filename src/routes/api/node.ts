@@ -8,6 +8,7 @@ import {
   createEmployeeController,
   createLeaveRequestController,
   generateSalaryController,
+  getNodeResourcesController,
   localSearchReportController,
 } from "../../controllers/nodeController";
 import { attachAuthContext, requireRoles } from "../../middleware/auth";
@@ -64,6 +65,12 @@ nodeRoutes.post(
   "/node/luong/tinh-luong",
   requireRoles(["admin", "node_admin", "hr_manager"]),
   calculateSalaryController,
+);
+
+nodeRoutes.get(
+  "/node/resources/:tableName",
+  requireRoles(["admin", "node_admin", "hr_manager", "viewer"]),
+  getNodeResourcesController,
 );
 
 nodeRoutes.get(

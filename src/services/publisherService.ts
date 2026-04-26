@@ -14,6 +14,20 @@ type SupportedTable = keyof typeof SUPPORTED_UPSERT_TABLES;
 
 type SyncAction = "INSERT" | "UPDATE" | "DELETE" | "UPSERT";
 
+type PaginationParams = {
+  page: number;
+  limit: number;
+  keyword?: string;
+  trangThai?: string;
+};
+
+type PaginatedResult<T> = {
+  page: number;
+  limit: number;
+  total: number;
+  data: T[];
+};
+
 function quoteIdentifier(identifier: string): string {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(identifier)) {
     throw new Error(`Invalid identifier: ${identifier}`);
@@ -380,4 +394,124 @@ export async function syncMonitor(thresholdMinutes = 30) {
     );
 
   return result.recordset;
+}
+
+export async function getPublisherCategory(
+  tableName: string,
+  params: PaginationParams,
+): Promise<PaginatedResult<Record<string, unknown>>> {
+  const pool = getGlobalDbPool();
+  const offset = (params.page - 1) * params.limit;
+  const keyword = `%${params.keyword ?? ""}%`;
+
+  if (tableName === "chinhanh") {
+    const countResult = await pool
+      .request()
+      .input("Keyword", sql.NVarChar(150), keyword)
+      .input(
+        "TrangThai",
+        sql.Bit,
+        params.trangThai === undefined
+          ? null
+          : params.trangThai === "1" || params.trangThai === "true",
+      )
+      .query(
+        `SELECT COUNT(1) AS Total
+         FROM ChiNhanh
+         WHERE (@Keyword = '%%' OR MaChiNhanh LIKE @Keyword OR TenChiNhanh LIKE @Keyword)
+           AND (@TrangThai IS NULL OR TrangThai = @TrangThai)`,
+      );
+
+    const dataResult = await pool
+      .request()
+      .input("Keyword", sql.NVarChar(150), keyword)
+      .input(
+        "TrangThai",
+        sql.Bit,
+        params.trangThai === undefined
+          ? null
+          : params.trangThai === "1" || params.trangThai === "true",
+      )
+      .input("Offset", sql.Int, offset)
+      .input("Limit", sql.Int, params.limit)
+      .query(
+        `SELECT MaChiNhanh, TenChiNhanh, DiaChi, TrangThai
+         FROM ChiNhanh
+         WHERE (@Keyword = '%%' OR MaChiNhanh LIKE @Keyword OR TenChiNhanh LIKE @Keyword)
+           AND (@TrangThai IS NULL OR TrangThai = @TrangThai)
+         ORDER BY MaChiNhanh
+         OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY`,
+      );
+
+    return {
+      page: params.page,
+      limit: params.limit,
+      total: Number(countResult.recordset[0]?.Total ?? 0),
+      data: dataResult.recordset,
+    };
+  }
+
+  if (tableName === "chucvu") {
+    const countResult = await pool
+      .request()
+      .input("Keyword", sql.NVarChar(150), keyword)
+      .query(
+        `SELECT COUNT(1) AS Total
+         FROM ChucVu
+         WHERE @Keyword = '%%' OR MaChucVu LIKE @Keyword OR TenChucVu LIKE @Keyword`,
+      );
+
+    const dataResult = await pool
+      .request()
+      .input("Keyword", sql.NVarChar(150), keyword)
+      .input("Offset", sql.Int, offset)
+      .input("Limit", sql.Int, params.limit)
+      .query(
+        `SELECT MaChucVu, TenChucVu, HeSoLuong
+         FROM ChucVu
+         WHERE @Keyword = '%%' OR MaChucVu LIKE @Keyword OR TenChucVu LIKE @Keyword
+         ORDER BY MaChucVu
+         OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY`,
+      );
+
+    return {
+      page: params.page,
+      limit: params.limit,
+      total: Number(countResult.recordset[0]?.Total ?? 0),
+      data: dataResult.recordset,
+    };
+  }
+
+  if (tableName === "loaihopdong") {
+    const countResult = await pool
+      .request()
+      .input("Keyword", sql.NVarChar(150), keyword)
+      .query(
+        `SELECT COUNT(1) AS Total
+         FROM LoaiHopDong
+         WHERE @Keyword = '%%' OR MaLoaiHopDong LIKE @Keyword OR TenLoaiHopDong LIKE @Keyword`,
+      );
+
+    const dataResult = await pool
+      .request()
+      .input("Keyword", sql.NVarChar(150), keyword)
+      .input("Offset", sql.Int, offset)
+      .input("Limit", sql.Int, params.limit)
+      .query(
+        `SELECT MaLoaiHopDong, TenLoaiHopDong, ThoiHanThang
+         FROM LoaiHopDong
+         WHERE @Keyword = '%%' OR MaLoaiHopDong LIKE @Keyword OR TenLoaiHopDong LIKE @Keyword
+         ORDER BY MaLoaiHopDong
+         OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY`,
+      );
+
+    return {
+      page: params.page,
+      limit: params.limit,
+      total: Number(countResult.recordset[0]?.Total ?? 0),
+      data: dataResult.recordset,
+    };
+  }
+
+  throw new Error("Table khong duoc ho tro tai Publisher");
 }

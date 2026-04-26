@@ -1,6 +1,7 @@
 import sql from "mssql";
 import { getLocalDbPool } from "../config/database";
 import { getAppEnv } from "../config/env";
+import { hashPassword } from "./common";
 
 type AttendanceStatus = "CHECKED_IN" | "CHECKED_OUT" | "LATE" | "ON_TIME";
 
@@ -39,6 +40,8 @@ export async function createEmployee(input: {
   maChiNhanh: string;
 }) {
   const pool = getLocalDbPool();
+  const defaultPassword = `${input.maNhanVien}@123456`;
+  const hashedPassword = await hashPassword(defaultPassword);
 
   const department = await pool
     .request()
@@ -72,8 +75,32 @@ export async function createEmployee(input: {
        (@MaNhanVien, @HoTen, @NgaySinh, @GioiTinh, @SDT, @Email, @MaPhongBan, @MaChucVu, @NgayVaoLam)`,
     );
 
+  await pool
+    .request()
+    .input("Username", sql.VarChar(50), input.maNhanVien)
+    .input("Password", sql.VarChar(100), hashedPassword)
+    .input("MaRole", sql.VarChar(10), "R05")
+    .input("MaChiNhanh", sql.VarChar(10), input.maChiNhanh)
+    .query(
+      `INSERT INTO Users (Username, Password, MaRole, MaChiNhanh)
+       VALUES (@Username, @Password, @MaRole, @MaChiNhanh)`,
+    );
+
   await writeLocalSyncLog("NhanVien", "INSERT", input.maNhanVien);
-  return { maNhanVien: input.maNhanVien };
+  await writeLocalSyncLog("Users", "INSERT", input.maNhanVien);
+  const data: object = {
+    maNhanVien: input.maNhanVien,
+    username: input.maNhanVien,
+    hoTen: input.hoTen,
+    ngaySinh: input.ngaySinh,
+    gioiTinh: input.gioiTinh,
+    sdt: input.sdt,
+    email: input.email,
+    maPhongBan: input.maPhongBan,
+    maChucVu: input.maChucVu,
+    ngayVaoLam: input.ngayVaoLam,
+  };
+  return data;
 }
 
 export async function createContract(input: {
@@ -117,8 +144,8 @@ export async function checkInAttendance(input: {
   await pool
     .request()
     .input("MaNhanVien", sql.VarChar(10), input.maNhanVien)
-    .input("Ngay", sql.Date, input.ngay)
-    .input("GioVao", sql.Time, input.gioVao)
+    .input("Ngay", sql.Date, new Date(input.ngay))
+    .input("GioVao", sql.Time, new Date(`1970-01-01T${input.gioVao}Z`))
     .input("TrangThai", sql.NVarChar(50), status)
     .query(
       `IF EXISTS (SELECT 1 FROM ChamCong WHERE MaNhanVien = @MaNhanVien AND Ngay = @Ngay)
@@ -144,6 +171,7 @@ export async function checkInAttendance(input: {
   return {
     maNhanVien: input.maNhanVien,
     ngay: input.ngay,
+    giovao: input.gioVao,
     trangThai: status,
   };
 }
@@ -158,8 +186,8 @@ export async function checkOutAttendance(input: {
   await pool
     .request()
     .input("MaNhanVien", sql.VarChar(10), input.maNhanVien)
-    .input("Ngay", sql.Date, input.ngay)
-    .input("GioRa", sql.Time, input.gioRa)
+    .input("Ngay", sql.Date, new Date(input.ngay))
+    .input("GioRa", sql.Time, new Date(`1970-01-01T${input.gioRa}Z`))
     .query(
       `UPDATE ChamCong
        SET GioRa = @GioRa,
@@ -196,15 +224,40 @@ export async function createLeaveRequest(input: {
     .input("LyDo", sql.NVarChar(255), input.lyDo ?? null)
     .input("TrangThai", sql.NVarChar(50), "CHO_DUYET")
     .query(
-      `INSERT INTO NghiPhep (MaNhanVien, TuNgay, DenNgay, LyDo, TrangThai)
-       OUTPUT INSERTED.MaNghiPhep
-       VALUES (@MaNhanVien, @TuNgay, @DenNgay, @LyDo, @TrangThai)`,
+      ` 
+    DECLARE @OutputTable TABLE (
+        MaNghiPhep INT,
+        MaNhanVien VARCHAR(10),
+        TuNgay DATE,
+        DenNgay DATE,
+        LyDo NVARCHAR(255),
+        TrangThai NVARCHAR(50)
+    );
+    INSERT INTO NghiPhep (MaNhanVien, TuNgay, DenNgay, LyDo, TrangThai)
+    OUTPUT 
+        INSERTED.MaNghiPhep, 
+        INSERTED.MaNhanVien, 
+        INSERTED.TuNgay, 
+        INSERTED.DenNgay, 
+        INSERTED.LyDo, 
+        INSERTED.TrangThai
+    INTO @OutputTable
+    VALUES (@MaNhanVien, @TuNgay, @DenNgay, @LyDo, @TrangThai);
+    SELECT * FROM @OutputTable;`,
     );
 
   const maNghiPhep = result.recordset[0]?.MaNghiPhep;
+  const data: object = {
+    maNghiPhep,
+    maNhanVien: result.recordset[0]?.MaNhanVien,
+    tuNgay: result.recordset[0]?.TuNgay,
+    denNgay: result.recordset[0]?.DenNgay,
+    lydo: result.recordset[0]?.LyDo,
+    trangThai: result.recordset[0]?.TrangThai,
+  }
   await writeLocalSyncLog("NghiPhep", "INSERT", String(maNghiPhep));
 
-  return { maNghiPhep };
+  return data;
 }
 
 export async function updateLeaveApproval(input: {

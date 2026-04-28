@@ -72,6 +72,7 @@ export async function createEmployee(input: {
   maChucVu: string;
   ngayVaoLam?: string;
   maChiNhanh: string;
+  maRole?: string;
 }) {
   const pool = getLocalDbPool();
   const defaultPassword = `${input.maNhanVien}@123456`;
@@ -113,7 +114,7 @@ export async function createEmployee(input: {
     .request()
     .input("Username", sql.VarChar(50), input.maNhanVien)
     .input("Password", sql.VarChar(100), hashedPassword)
-    .input("MaRole", sql.VarChar(10), "R05")
+    .input("MaRole", sql.VarChar(10), input.maRole ?? "R05")
     .input("MaChiNhanh", sql.VarChar(10), input.maChiNhanh)
     .query(
       `INSERT INTO Users (Username, Password, MaRole, MaChiNhanh)

@@ -10,6 +10,7 @@ import {
   generateSalaryController,
   getNodeResourcesController,
   localSearchReportController,
+  transferEmployeeBranchController,
 } from "../../controllers/nodeController";
 import { attachAuthContext, requireRoles } from "../../middleware/auth";
 
@@ -41,6 +42,12 @@ nodeRoutes.post(
   "/node/attendance/check-out",
   requireRoles(["admin", "node_admin", "hr_manager", "staff"]),
   checkOutAttendanceController,
+);
+
+nodeRoutes.post(
+  "/node/employees/transfer",
+  requireRoles(["admin", "node_admin", "hr_manager"]),
+  transferEmployeeBranchController,
 );
 
 nodeRoutes.post(

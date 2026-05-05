@@ -8,6 +8,7 @@ import {
   createLeaveRequest,
   getNodeResource,
   localSearchAndReport,
+  transferEmployeeBranch,
   updateLeaveApproval,
 } from "../services/nodeService";
 
@@ -177,6 +178,22 @@ export async function getNodeResourcesController(
       message: "Lay danh sach du lieu Node thanh cong",
       data: result,
     });
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function transferEmployeeBranchController(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const result = await transferEmployeeBranch({
+      maNhanVien: String(request.body.maNhanVien ?? ""),
+      maChiNhanhDich: String(request.body.maChiNhanhDich ?? ""),
+      maPhongBanMoi: String(request.body.maPhongBanMoi ?? ""),
+    });
+    response.status(200).json(result);
   } catch (error) {
     handleControllerError(response, error);
   }

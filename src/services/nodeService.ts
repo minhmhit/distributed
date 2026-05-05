@@ -21,6 +21,12 @@ type PaginatedResult<T> = {
   data: T[];
 };
 
+type TransferEmployeeInput = {
+  maNhanVien: string;
+  maChiNhanhDich: string;
+  maPhongBanMoi: string;
+};
+
 function resolveNodeBranchCode(syncNodeName: string): string {
   const normalized = syncNodeName.trim().toLowerCase();
 
@@ -37,6 +43,29 @@ function resolveNodeBranchCode(syncNodeName: string): string {
 
 function getCurrentNodeBranchCode(): string {
   return resolveNodeBranchCode(getAppEnv().syncNodeName);
+}
+
+async function insertSyncLogInTransaction(
+  transaction: sql.Transaction,
+  record: {
+    tableName: string;
+    actionType: "INSERT" | "UPDATE" | "DELETE";
+    recordId: string;
+    node: string;
+    status: string;
+  },
+): Promise<void> {
+  await transaction
+    .request()
+    .input("TableName", sql.VarChar(50), record.tableName)
+    .input("ActionType", sql.VarChar(10), record.actionType)
+    .input("RecordID", sql.VarChar(50), record.recordId)
+    .input("Node", sql.NVarChar(50), record.node)
+    .input("TrangThai", sql.NVarChar(50), record.status)
+    .query(
+      `INSERT INTO SyncLog (TableName, ActionType, RecordID, Node, TrangThai)
+       VALUES (@TableName, @ActionType, @RecordID, @Node, @TrangThai)`,
+    );
 }
 
 async function writeLocalSyncLog(
@@ -293,6 +322,121 @@ export async function createLeaveRequest(input: {
   await writeLocalSyncLog("NghiPhep", "INSERT", String(maNghiPhep));
 
   return data;
+}
+
+export async function transferEmployeeBranch(
+  input: TransferEmployeeInput,
+): Promise<{ message: string }> {
+  const pool = getLocalDbPool();
+  const env = getAppEnv();
+  const transaction = new sql.Transaction(pool);
+
+  await transaction.begin();
+
+  try {
+    if (!input.maNhanVien || !input.maChiNhanhDich || !input.maPhongBanMoi) {
+      throw new Error("Thieu thong tin bat buoc");
+    }
+
+    const departmentResult = await transaction
+      .request()
+      .input("MaPhongBan", sql.VarChar(10), input.maPhongBanMoi)
+      .input("MaChiNhanh", sql.VarChar(10), input.maChiNhanhDich)
+      .query(
+        `SELECT 1 AS found
+         FROM PhongBan
+         WHERE MaPhongBan = @MaPhongBan AND MaChiNhanh = @MaChiNhanh`,
+      );
+
+    if (departmentResult.recordset.length === 0) {
+      throw new Error(
+        "Phong ban dich khong ton tai hoac khong thuoc chi nhanh dich",
+      );
+    }
+
+    const employeeResult = await transaction
+      .request()
+      .input("MaNhanVien", sql.VarChar(10), input.maNhanVien)
+      .query(
+        `SELECT nv.MaNhanVien, nv.TrangThai, pb.MaChiNhanh
+         FROM NhanVien nv
+         INNER JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
+         WHERE nv.MaNhanVien = @MaNhanVien`,
+      );
+
+    const employee = employeeResult.recordset[0];
+    if (!employee) {
+      throw new Error("Nhan vien khong ton tai");
+    }
+
+    const currentBranch = employee.MaChiNhanh as string | undefined;
+    if (currentBranch === input.maChiNhanhDich) {
+      throw new Error("Nhan vien dang o cung chi nhanh");
+    }
+
+    const trangThai = String(employee.TrangThai ?? "");
+    if (!/[Dd]ang\s+lam/.test(trangThai)) {
+      throw new Error("Nhan vien khong o trang thai Dang lam");
+    }
+
+    await transaction
+      .request()
+      .input("MaNhanVien", sql.VarChar(10), input.maNhanVien)
+      .input("MaPhongBan", sql.VarChar(10), input.maPhongBanMoi)
+      .query(
+        `UPDATE NhanVien
+         SET MaPhongBan = @MaPhongBan
+         WHERE MaNhanVien = @MaNhanVien`,
+      );
+
+    const userResult = await transaction
+      .request()
+      .input("Username", sql.VarChar(50), input.maNhanVien)
+      .query(
+        `SELECT Username
+         FROM Users
+         WHERE Username = @Username`,
+      );
+
+    const hasUser = userResult.recordset.length > 0;
+
+    if (hasUser) {
+      await transaction
+        .request()
+        .input("Username", sql.VarChar(50), input.maNhanVien)
+        .input("MaChiNhanh", sql.VarChar(10), input.maChiNhanhDich)
+        .query(
+          `UPDATE Users
+           SET MaChiNhanh = @MaChiNhanh
+           WHERE Username = @Username`,
+        );
+    }
+
+    await insertSyncLogInTransaction(transaction, {
+      tableName: "NhanVien",
+      actionType: "UPDATE",
+      recordId: input.maNhanVien,
+      node: env.syncNodeName,
+      status: "PENDING_PUBLISHER_SYNC",
+    });
+
+    if (hasUser) {
+      await insertSyncLogInTransaction(transaction, {
+        tableName: "Users",
+        actionType: "UPDATE",
+        recordId: input.maNhanVien,
+        node: env.syncNodeName,
+        status: "PENDING_PUBLISHER_SYNC",
+      });
+    }
+
+    await transaction.commit();
+
+    return { message: "Chuyen chi nhanh thanh cong" };
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
 }
 
 export async function updateLeaveApproval(input: {

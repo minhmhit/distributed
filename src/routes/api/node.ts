@@ -6,8 +6,14 @@ import {
   createContractController,
   createEmployeeController,
   createLeaveRequestController,
+  deleteEmployeeController,
   generateSalaryController,
+  getAttendanceController,
+  listEmployeesController,
+  listLeavesController,
   localSearchReportController,
+  syncStatusController,
+  updateEmployeeController,
 } from "../../controllers/nodeController";
 import { attachAuthContext, requireRoles } from "../../middleware/auth";
 
@@ -21,6 +27,28 @@ nodeRoutes.post(
     enforceBranchScope: true,
   }),
   createEmployeeController,
+);
+
+nodeRoutes.get(
+  "/node/employees",
+  requireRoles(["admin", "node_admin", "hr_manager", "viewer"]),
+  listEmployeesController,
+);
+
+nodeRoutes.put(
+  "/node/employees/:maNhanVien",
+  requireRoles(["admin", "node_admin", "hr_manager"], {
+    enforceBranchScope: true,
+  }),
+  updateEmployeeController,
+);
+
+nodeRoutes.delete(
+  "/node/employees/:maNhanVien",
+  requireRoles(["admin", "node_admin", "hr_manager"], {
+    enforceBranchScope: true,
+  }),
+  deleteEmployeeController,
 );
 
 nodeRoutes.post(
@@ -41,10 +69,22 @@ nodeRoutes.post(
   checkOutAttendanceController,
 );
 
+nodeRoutes.get(
+  "/node/attendance/:maNhanVien",
+  requireRoles(["admin", "node_admin", "hr_manager", "viewer"]),
+  getAttendanceController,
+);
+
 nodeRoutes.post(
   "/node/leaves",
   requireRoles(["admin", "node_admin", "hr_manager", "staff"]),
   createLeaveRequestController,
+);
+
+nodeRoutes.get(
+  "/node/leaves",
+  requireRoles(["admin", "node_admin", "hr_manager", "viewer"]),
+  listLeavesController,
 );
 
 nodeRoutes.put(
@@ -63,6 +103,12 @@ nodeRoutes.get(
   "/node/reports/local",
   requireRoles(["admin", "node_admin", "hr_manager", "viewer"]),
   localSearchReportController,
+);
+
+nodeRoutes.get(
+  "/node/sync/status",
+  requireRoles(["admin", "node_admin", "hr_manager", "viewer"]),
+  syncStatusController,
 );
 
 export default nodeRoutes;

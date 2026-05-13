@@ -12,6 +12,7 @@ import {
   listLeaves,
   listLocalEmployees,
   localSearchAndReport,
+  reactivateEmployee,
   updateEmployee,
   updateLeaveApproval,
 } from "../services/nodeService";
@@ -173,6 +174,19 @@ export async function deleteEmployeeController(
   try {
     const maNhanVien = String(request.params.maNhanVien ?? "");
     const result = await deleteEmployee(maNhanVien, request.auth?.branchCode);
+    response.status(200).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function reactivateEmployeeController(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const maNhanVien = String(request.params.maNhanVien ?? "");
+    const result = await reactivateEmployee(maNhanVien, request.auth?.branchCode);
     response.status(200).json(result);
   } catch (error) {
     handleControllerError(response, error);

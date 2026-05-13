@@ -12,6 +12,7 @@ import {
   listEmployeesController,
   listLeavesController,
   localSearchReportController,
+  reactivateEmployeeController,
   syncStatusController,
   updateEmployeeController,
 } from "../../controllers/nodeController";
@@ -49,6 +50,14 @@ nodeRoutes.delete(
     enforceBranchScope: true,
   }),
   deleteEmployeeController,
+);
+
+nodeRoutes.patch(
+  "/node/employees/:maNhanVien/reactivate",
+  requireRoles(["admin", "node_admin", "hr_manager"], {
+    enforceBranchScope: true,
+  }),
+  reactivateEmployeeController,
 );
 
 nodeRoutes.post(

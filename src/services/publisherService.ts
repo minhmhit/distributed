@@ -313,9 +313,13 @@ export async function companySearch(keyword?: string) {
 
   const result = await request.query(
     `SELECT nv.MaNhanVien, nv.HoTen, nv.Email, nv.SDT,
-            pb.TenPhongBan, cn.MaChiNhanh, cn.TenChiNhanh
+            nv.NgaySinh, nv.NgayVaoLam, nv.TrangThai,
+            nv.MaPhongBan, pb.TenPhongBan,
+            nv.MaChucVu, cv.TenChucVu,
+            cn.MaChiNhanh, cn.TenChiNhanh
      FROM NhanVien nv
      LEFT JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
+     LEFT JOIN ChucVu cv ON cv.MaChucVu = nv.MaChucVu
      LEFT JOIN ChiNhanh cn ON cn.MaChiNhanh = pb.MaChiNhanh
      WHERE @Keyword = '%%'
         OR nv.HoTen LIKE @Keyword

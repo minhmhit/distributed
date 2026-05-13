@@ -193,6 +193,42 @@ export async function deleteEmployee(maNhanVien: string, branchScope?: string) {
   return { maNhanVien, trangThai: "DA_NGHI_VIEC" };
 }
 
+export async function reactivateEmployee(maNhanVien: string, branchScope?: string) {
+  const pool = getLocalDbPool();
+
+  const employeeResult = await pool
+    .request()
+    .input("MaNhanVien", sql.VarChar(10), maNhanVien)
+    .query(
+      `SELECT nv.MaNhanVien, pb.MaChiNhanh
+       FROM NhanVien nv
+       LEFT JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
+       WHERE nv.MaNhanVien = @MaNhanVien`,
+    );
+
+  if (employeeResult.recordset.length === 0) {
+    throw new Error("Khong tim thay nhan vien");
+  }
+
+  const employeeBranch = employeeResult.recordset[0]?.MaChiNhanh;
+  if (branchScope && employeeBranch && branchScope !== employeeBranch) {
+    throw new Error("Khong duoc phep cap nhat nhan vien khac chi nhanh");
+  }
+
+  await pool
+    .request()
+    .input("MaNhanVien", sql.VarChar(10), maNhanVien)
+    .input("TrangThai", sql.NVarChar(50), "Dang lam")
+    .query(
+      `UPDATE NhanVien
+       SET TrangThai = @TrangThai
+       WHERE MaNhanVien = @MaNhanVien`,
+    );
+
+  await writeLocalSyncLog("NhanVien", "UPDATE", maNhanVien);
+  return { maNhanVien, trangThai: "Dang lam" };
+}
+
 export async function createContract(input: {
   maHopDong: string;
   maNhanVien: string;
@@ -419,14 +455,20 @@ export async function localSearchAndReport(input: {
       .request()
       .input("Keyword", sql.NVarChar(150), keyword)
       .query(
-        `SELECT MaNhanVien, HoTen, Email, SDT, TrangThai
-         FROM NhanVien
-         WHERE (TrangThai IS NULL OR TrangThai <> N'DA_NGHI_VIEC')
-           AND (
-             @Keyword = '%%'
-             OR HoTen LIKE @Keyword
-             OR MaNhanVien LIKE @Keyword
-           )`,
+        `SELECT nv.MaNhanVien, nv.HoTen, nv.Email, nv.SDT,
+                nv.NgaySinh, nv.NgayVaoLam, nv.TrangThai,
+                nv.MaPhongBan, pb.TenPhongBan,
+                nv.MaChucVu, cv.TenChucVu,
+                cn.MaChiNhanh, cn.TenChiNhanh
+         FROM NhanVien nv
+         LEFT JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
+         LEFT JOIN ChucVu cv ON cv.MaChucVu = nv.MaChucVu
+         LEFT JOIN ChiNhanh cn ON cn.MaChiNhanh = pb.MaChiNhanh
+         WHERE (
+           @Keyword = '%%'
+           OR nv.HoTen LIKE @Keyword
+           OR nv.MaNhanVien LIKE @Keyword
+         )`,
       ),
     pool
       .request()
@@ -465,15 +507,16 @@ export async function listLocalEmployees(keyword?: string) {
     .request()
     .input("Keyword", sql.NVarChar(150), kw)
     .query(
-      `SELECT nv.MaNhanVien, nv.HoTen, nv.Email, nv.SDT, nv.GioiTinh, nv.NgayVaoLam,
-              nv.TrangThai,
+      `SELECT nv.MaNhanVien, nv.HoTen, nv.Email, nv.SDT, nv.GioiTinh,
+              nv.NgaySinh, nv.NgayVaoLam, nv.TrangThai,
               pb.MaPhongBan, pb.TenPhongBan,
-              cv.MaChucVu, cv.TenChucVu, cv.HeSoLuong
+              cv.MaChucVu, cv.TenChucVu, cv.HeSoLuong,
+              cn.MaChiNhanh, cn.TenChiNhanh
        FROM NhanVien nv
        LEFT JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
        LEFT JOIN ChucVu cv ON cv.MaChucVu = nv.MaChucVu
-       WHERE (nv.TrangThai IS NULL OR nv.TrangThai <> N'DA_NGHI_VIEC')
-         AND (
+       LEFT JOIN ChiNhanh cn ON cn.MaChiNhanh = pb.MaChiNhanh
+       WHERE (
            @Keyword = '%%'
            OR nv.HoTen LIKE @Keyword
            OR nv.MaNhanVien LIKE @Keyword

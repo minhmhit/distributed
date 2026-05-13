@@ -14,6 +14,10 @@ import {
   localSearchReportController,
   syncStatusController,
   updateEmployeeController,
+  listBranchesController,
+  listPositionsController,
+  listContractTypesController,
+  listDepartmentsController,
 } from "../../controllers/nodeController";
 import { attachAuthContext, requireRoles } from "../../middleware/auth";
 
@@ -109,6 +113,30 @@ nodeRoutes.get(
   "/node/sync/status",
   requireRoles(["admin", "node_admin", "hr_manager", "viewer"]),
   syncStatusController,
+);
+
+nodeRoutes.get(
+  "/node/branches",
+  requireRoles(["admin", "node_admin", "hr_manager", "viewer"]),
+  listBranchesController,
+);
+
+nodeRoutes.get(
+  "/node/positions",
+  requireRoles(["admin", "node_admin", "hr_manager", "viewer"]),
+  listPositionsController,
+);
+
+nodeRoutes.get(
+  "/node/contract-types",
+  requireRoles(["admin", "node_admin", "hr_manager", "viewer"]),
+  listContractTypesController,
+);
+
+nodeRoutes.get(
+  "/node/departments",
+  requireRoles(["admin", "node_admin", "hr_manager", "viewer"]),
+  listDepartmentsController,
 );
 
 export default nodeRoutes;

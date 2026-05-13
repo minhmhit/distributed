@@ -485,6 +485,30 @@ export async function listLocalEmployees(keyword?: string) {
   return result.recordset;
 }
 
+export async function listLocalBranches() {
+  const pool = getLocalDbPool();
+  const result = await pool.request().query("SELECT * FROM ChiNhanh");
+  return result.recordset;
+}
+
+export async function listLocalPositions() {
+  const pool = getLocalDbPool();
+  const result = await pool.request().query("SELECT * FROM ChucVu");
+  return result.recordset;
+}
+
+export async function listLocalContractTypes() {
+  const pool = getLocalDbPool();
+  const result = await pool.request().query("SELECT * FROM LoaiHopDong");
+  return result.recordset;
+}
+
+export async function listLocalDepartments() {
+  const pool = getLocalDbPool();
+  const result = await pool.request().query("SELECT * FROM PhongBan");
+  return result.recordset;
+}
+
 export async function listLeaves(input: { trangThai?: string; maNhanVien?: string }) {
   const pool = getLocalDbPool();
 

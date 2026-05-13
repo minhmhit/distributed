@@ -10,7 +10,11 @@ import {
   getAttendanceByEmployee,
   getSyncPendingCount,
   listLeaves,
+  listLocalBranches,
+  listLocalContractTypes,
+  listLocalDepartments,
   listLocalEmployees,
+  listLocalPositions,
   localSearchAndReport,
   reactivateEmployee,
   updateEmployee,
@@ -45,6 +49,54 @@ export async function createEmployeeController(
 
     const result = await createEmployee(body);
     response.status(201).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function listBranchesController(
+  _request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const result = await listLocalBranches();
+    response.status(200).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function listPositionsController(
+  _request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const result = await listLocalPositions();
+    response.status(200).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function listContractTypesController(
+  _request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const result = await listLocalContractTypes();
+    response.status(200).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function listDepartmentsController(
+  _request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const result = await listLocalDepartments();
+    response.status(200).json(result);
   } catch (error) {
     handleControllerError(response, error);
   }

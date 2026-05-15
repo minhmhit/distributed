@@ -1,6 +1,10 @@
 import sql from "mssql";
 import { getGlobalDbPool } from "../config/database";
 import { hashPassword } from "./common";
+import {
+  updateEmployeeInPublisherAndBranchNode,
+  updateEmployeeStatusInPublisherAndBranchNode,
+} from "./employeeReplicationService";
 
 const SUPPORTED_UPSERT_TABLES = {
   ChiNhanh: "MaChiNhanh",
@@ -191,6 +195,93 @@ export async function listContractTypes() {
   return result.recordset;
 }
 
+export async function createEmployee(input: {
+  maNhanVien: string;
+  hoTen: string;
+  ngaySinh?: string;
+  gioiTinh?: string;
+  sdt?: string;
+  email?: string;
+  maPhongBan: string;
+  maChucVu: string;
+  ngayVaoLam?: string;
+  maChiNhanh: string;
+  trangThai?: string;
+}) {
+  const pool = getGlobalDbPool();
+
+  const department = await pool
+    .request()
+    .input("MaPhongBan", sql.VarChar(10), input.maPhongBan)
+    .input("MaChiNhanh", sql.VarChar(10), input.maChiNhanh)
+    .query(
+      `SELECT 1 AS found
+       FROM PhongBan
+       WHERE MaPhongBan = @MaPhongBan AND MaChiNhanh = @MaChiNhanh`,
+    );
+
+  if (department.recordset.length === 0) {
+    throw new Error("Phong ban khong thuoc chi nhanh da chon");
+  }
+
+  await pool
+    .request()
+    .input("MaNhanVien", sql.VarChar(10), input.maNhanVien)
+    .input("HoTen", sql.NVarChar(150), input.hoTen)
+    .input("NgaySinh", sql.Date, input.ngaySinh ?? null)
+    .input("GioiTinh", sql.NVarChar(10), input.gioiTinh ?? null)
+    .input("SDT", sql.VarChar(15), input.sdt ?? null)
+    .input("Email", sql.VarChar(100), input.email ?? null)
+    .input("MaPhongBan", sql.VarChar(10), input.maPhongBan)
+    .input("MaChucVu", sql.VarChar(10), input.maChucVu)
+    .input("NgayVaoLam", sql.Date, input.ngayVaoLam ?? null)
+    .input("TrangThai", sql.NVarChar(50), input.trangThai ?? "Dang lam")
+    .query(
+      `INSERT INTO NhanVien
+       (MaNhanVien, HoTen, NgaySinh, GioiTinh, SDT, Email, MaPhongBan, MaChucVu, NgayVaoLam, TrangThai)
+       VALUES
+       (@MaNhanVien, @HoTen, @NgaySinh, @GioiTinh, @SDT, @Email, @MaPhongBan, @MaChucVu, @NgayVaoLam, @TrangThai)`,
+    );
+
+  await writePublisherSyncLog("NhanVien", "INSERT", input.maNhanVien);
+  return { maNhanVien: input.maNhanVien };
+}
+
+export async function updateEmployee(
+  maNhanVien: string,
+  input: {
+    hoTen: string;
+    ngaySinh?: string;
+    gioiTinh?: string;
+    sdt?: string;
+    email?: string;
+    maPhongBan: string;
+    maChucVu: string;
+    ngayVaoLam?: string;
+    trangThai?: string;
+    maChiNhanh: string;
+  },
+) {
+  const result = await updateEmployeeInPublisherAndBranchNode(maNhanVien, input);
+
+  await writePublisherSyncLog("NhanVien", "UPDATE", maNhanVien);
+  return { maNhanVien, branchUpdated: result.branchUpdated };
+}
+
+export async function deleteEmployee(maNhanVien: string) {
+  await updateEmployeeStatusInPublisherAndBranchNode(maNhanVien, "Nghi việc");
+
+  await writePublisherSyncLog("NhanVien", "UPDATE", maNhanVien);
+  return { maNhanVien, action: "DELETED_STATUS" };
+}
+
+export async function reactivateEmployee(maNhanVien: string) {
+  await updateEmployeeStatusInPublisherAndBranchNode(maNhanVien, "Hoạt động");
+
+  await writePublisherSyncLog("NhanVien", "UPDATE", maNhanVien);
+  return { maNhanVien, action: "REACTIVATED" };
+}
+
 export async function createUserAccount(input: {
   username: string;
   password: string;
@@ -312,10 +403,14 @@ export async function companySearch(keyword?: string) {
   request.input("Keyword", sql.NVarChar(150), `%${keyword ?? ""}%`);
 
   const result = await request.query(
-    `SELECT nv.MaNhanVien, nv.HoTen, nv.Email, nv.SDT,
-            pb.TenPhongBan, cn.MaChiNhanh, cn.TenChiNhanh
+    `SELECT nv.MaNhanVien, nv.HoTen, nv.Email, nv.SDT, nv.GioiTinh, nv.NgaySinh, nv.NgayVaoLam,
+            nv.MaPhongBan, pb.TenPhongBan, 
+            nv.MaChucVu, cv.TenChucVu,
+            cn.MaChiNhanh, cn.TenChiNhanh,
+            nv.TrangThai
      FROM NhanVien nv
      LEFT JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
+     LEFT JOIN ChucVu cv ON cv.MaChucVu = nv.MaChucVu
      LEFT JOIN ChiNhanh cn ON cn.MaChiNhanh = pb.MaChiNhanh
      WHERE @Keyword = '%%'
         OR nv.HoTen LIKE @Keyword

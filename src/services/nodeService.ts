@@ -1,6 +1,10 @@
 import sql from "mssql";
 import { getLocalDbPool } from "../config/database";
 import { getAppEnv } from "../config/env";
+import {
+  updateEmployeeInPublisherAndCurrentNode,
+  updateEmployeeStatusInPublisherAndCurrentNode,
+} from "./employeeReplicationService";
 
 type AttendanceStatus = "CHECKED_IN" | "CHECKED_OUT" | "LATE" | "ON_TIME";
 
@@ -74,6 +78,42 @@ export async function createEmployee(input: {
 
   await writeLocalSyncLog("NhanVien", "INSERT", input.maNhanVien);
   return { maNhanVien: input.maNhanVien };
+}
+
+export async function updateEmployee(
+  maNhanVien: string,
+  input: {
+    hoTen: string;
+    ngaySinh?: string;
+    gioiTinh?: string;
+    sdt?: string;
+    email?: string;
+    maPhongBan: string;
+    maChucVu: string;
+    ngayVaoLam?: string;
+    trangThai?: string;
+    maChiNhanh: string;
+  },
+) {
+  await updateEmployeeInPublisherAndCurrentNode(maNhanVien, input);
+
+  await writeLocalSyncLog("NhanVien", "UPDATE", maNhanVien);
+  return { maNhanVien };
+}
+
+export async function deleteEmployee(maNhanVien: string) {
+  // Thuc te thuong chi mark la 'Nghi viec' chu khong xoa vat ly
+  await updateEmployeeStatusInPublisherAndCurrentNode(maNhanVien, "Nghi việc");
+
+  await writeLocalSyncLog("NhanVien", "UPDATE", maNhanVien);
+  return { maNhanVien, action: "DELETED_STATUS" };
+}
+
+export async function reactivateEmployee(maNhanVien: string) {
+  await updateEmployeeStatusInPublisherAndCurrentNode(maNhanVien, "Hoạt động");
+
+  await writeLocalSyncLog("NhanVien", "UPDATE", maNhanVien);
+  return { maNhanVien, action: "REACTIVATED" };
 }
 
 export async function createContract(input: {
@@ -302,9 +342,16 @@ export async function localSearchAndReport(input: {
       .request()
       .input("Keyword", sql.NVarChar(150), keyword)
       .query(
-        `SELECT MaNhanVien, HoTen, Email, SDT
-         FROM NhanVien
-         WHERE @Keyword = '%%' OR HoTen LIKE @Keyword OR MaNhanVien LIKE @Keyword`,
+        `SELECT nv.MaNhanVien, nv.HoTen, nv.Email, nv.SDT,
+                nv.MaPhongBan, pb.TenPhongBan,
+                nv.MaChucVu, cv.TenChucVu,
+                nv.TrangThai
+         FROM NhanVien nv
+         LEFT JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
+         LEFT JOIN ChucVu cv ON cv.MaChucVu = nv.MaChucVu
+         WHERE @Keyword = '%%' 
+            OR nv.HoTen LIKE @Keyword 
+            OR nv.MaNhanVien LIKE @Keyword`,
       ),
     pool
       .request()

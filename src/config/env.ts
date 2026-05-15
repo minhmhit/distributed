@@ -39,12 +39,52 @@ const schema = z.object({
   LOCAL_DB_NAME: z.string().min(1),
   LOCAL_DB_ENCRYPT: z.string().optional().default("false"),
   LOCAL_DB_TRUST_SERVER_CERT: z.string().optional().default("true"),
+
+  NODE_HCM_DB_HOST: z.string().optional(),
+  NODE_HCM_DB_PORT: z.coerce.number().int().positive().optional(),
+  NODE_HCM_DB_USER: z.string().optional(),
+  NODE_HCM_DB_PASSWORD: z.string().optional(),
+  NODE_HCM_DB_NAME: z.string().optional(),
+  NODE_HCM_DB_ENCRYPT: z.string().optional().default("false"),
+  NODE_HCM_DB_TRUST_SERVER_CERT: z.string().optional().default("true"),
+
+  NODE_HN_DB_HOST: z.string().optional(),
+  NODE_HN_DB_PORT: z.coerce.number().int().positive().optional(),
+  NODE_HN_DB_USER: z.string().optional(),
+  NODE_HN_DB_PASSWORD: z.string().optional(),
+  NODE_HN_DB_NAME: z.string().optional(),
+  NODE_HN_DB_ENCRYPT: z.string().optional().default("false"),
+  NODE_HN_DB_TRUST_SERVER_CERT: z.string().optional().default("true"),
 });
 
 let cachedEnv: AppEnv | null = null;
 
 function toBoolean(value: string): boolean {
   return value.toLowerCase() === "true";
+}
+
+function optionalDbConfig(input: {
+  host?: string;
+  port?: number;
+  user?: string;
+  password?: string;
+  database?: string;
+  encrypt: string;
+  trustServerCertificate: string;
+}) {
+  if (!input.host || !input.user || !input.password || !input.database) {
+    return undefined;
+  }
+
+  return {
+    host: input.host,
+    port: input.port ?? 1433,
+    user: input.user,
+    password: input.password,
+    database: input.database,
+    encrypt: toBoolean(input.encrypt),
+    trustServerCertificate: toBoolean(input.trustServerCertificate),
+  };
 }
 
 export function getAppEnv(): AppEnv {
@@ -86,6 +126,26 @@ export function getAppEnv(): AppEnv {
       database: parsed.data.LOCAL_DB_NAME,
       encrypt: toBoolean(parsed.data.LOCAL_DB_ENCRYPT),
       trustServerCertificate: toBoolean(parsed.data.LOCAL_DB_TRUST_SERVER_CERT),
+    },
+    branchDbs: {
+      hcm: optionalDbConfig({
+        host: parsed.data.NODE_HCM_DB_HOST,
+        port: parsed.data.NODE_HCM_DB_PORT,
+        user: parsed.data.NODE_HCM_DB_USER,
+        password: parsed.data.NODE_HCM_DB_PASSWORD,
+        database: parsed.data.NODE_HCM_DB_NAME,
+        encrypt: parsed.data.NODE_HCM_DB_ENCRYPT,
+        trustServerCertificate: parsed.data.NODE_HCM_DB_TRUST_SERVER_CERT,
+      }),
+      hn: optionalDbConfig({
+        host: parsed.data.NODE_HN_DB_HOST,
+        port: parsed.data.NODE_HN_DB_PORT,
+        user: parsed.data.NODE_HN_DB_USER,
+        password: parsed.data.NODE_HN_DB_PASSWORD,
+        database: parsed.data.NODE_HN_DB_NAME,
+        encrypt: parsed.data.NODE_HN_DB_ENCRYPT,
+        trustServerCertificate: parsed.data.NODE_HN_DB_TRUST_SERVER_CERT,
+      }),
     },
   };
 

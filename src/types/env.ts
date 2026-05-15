@@ -24,4 +24,24 @@ export type AppEnv = {
     encrypt: boolean;
     trustServerCertificate: boolean;
   };
+  branchDbs: {
+    hcm?: {
+      host: string;
+      port: number;
+      user: string;
+      password: string;
+      database: string;
+      encrypt: boolean;
+      trustServerCertificate: boolean;
+    };
+    hn?: {
+      host: string;
+      port: number;
+      user: string;
+      password: string;
+      database: string;
+      encrypt: boolean;
+      trustServerCertificate: boolean;
+    };
+  };
 };

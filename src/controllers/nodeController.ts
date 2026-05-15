@@ -8,6 +8,9 @@ import {
   generateSalary,
   localSearchAndReport,
   updateLeaveApproval,
+  updateEmployee,
+  deleteEmployee,
+  reactivateEmployee,
 } from "../services/nodeService";
 
 function handleControllerError(response: Response, error: unknown): void {
@@ -26,6 +29,45 @@ export async function createEmployeeController(
   try {
     const result = await createEmployee(request.body);
     response.status(201).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function updateEmployeeController(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const maNhanVien = String(request.params.maNhanVien || "");
+    const result = await updateEmployee(maNhanVien, request.body);
+    response.status(200).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function deleteEmployeeController(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const maNhanVien = String(request.params.maNhanVien || "");
+    const result = await deleteEmployee(maNhanVien);
+    response.status(200).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function reactivateEmployeeController(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const maNhanVien = String(request.params.maNhanVien || "");
+    const result = await reactivateEmployee(maNhanVien);
+    response.status(200).json(result);
   } catch (error) {
     handleControllerError(response, error);
   }

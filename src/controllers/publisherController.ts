@@ -3,15 +3,19 @@ import {
   companySearch,
   createBranch,
   createContractType,
+  createEmployee,
   createPosition,
   createUserAccount,
+  deleteEmployee,
   ingestNodeData,
   listBranches,
   listContractTypes,
   listPositions,
+  reactivateEmployee,
   summaryReport,
   syncMonitor,
   updateBranch,
+  updateEmployee,
   updatePosition,
 } from "../services/publisherService";
 
@@ -116,6 +120,57 @@ export async function listContractTypesController(
 ): Promise<void> {
   try {
     const result = await listContractTypes();
+    response.status(200).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function createEmployeeController(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const result = await createEmployee(request.body);
+    response.status(201).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function updateEmployeeController(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const maNhanVien = String(request.params.maNhanVien ?? "");
+    const result = await updateEmployee(maNhanVien, request.body);
+    response.status(200).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function deleteEmployeeController(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const maNhanVien = String(request.params.maNhanVien ?? "");
+    const result = await deleteEmployee(maNhanVien);
+    response.status(200).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function reactivateEmployeeController(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const maNhanVien = String(request.params.maNhanVien ?? "");
+    const result = await reactivateEmployee(maNhanVien);
     response.status(200).json(result);
   } catch (error) {
     handleControllerError(response, error);

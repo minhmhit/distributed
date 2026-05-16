@@ -19,9 +19,6 @@ import {
   reactivateEmployee,
   updateEmployee,
   updateLeaveApproval,
-  updateEmployee,
-  deleteEmployee,
-  reactivateEmployee,
 } from "../services/nodeService";
 
 function handleControllerError(response: Response, error: unknown): void {
@@ -57,59 +54,30 @@ export async function createEmployeeController(
   }
 }
 
-<<<<<<< HEAD
-export async function updateEmployeeController(
-  request: Request,
-  response: Response,
-): Promise<void> {
-  try {
-    const maNhanVien = String(request.params.maNhanVien || "");
-    const result = await updateEmployee(maNhanVien, request.body);
-=======
 export async function listBranchesController(
   _request: Request,
   response: Response,
 ): Promise<void> {
   try {
     const result = await listLocalBranches();
->>>>>>> 7bdccd89169fbdd64c47bcf5afdd9e0174226cc9
     response.status(200).json(result);
   } catch (error) {
     handleControllerError(response, error);
   }
 }
 
-<<<<<<< HEAD
-export async function deleteEmployeeController(
-  request: Request,
-  response: Response,
-): Promise<void> {
-  try {
-    const maNhanVien = String(request.params.maNhanVien || "");
-    const result = await deleteEmployee(maNhanVien);
-=======
 export async function listPositionsController(
   _request: Request,
   response: Response,
 ): Promise<void> {
   try {
     const result = await listLocalPositions();
->>>>>>> 7bdccd89169fbdd64c47bcf5afdd9e0174226cc9
     response.status(200).json(result);
   } catch (error) {
     handleControllerError(response, error);
   }
 }
 
-<<<<<<< HEAD
-export async function reactivateEmployeeController(
-  request: Request,
-  response: Response,
-): Promise<void> {
-  try {
-    const maNhanVien = String(request.params.maNhanVien || "");
-    const result = await reactivateEmployee(maNhanVien);
-=======
 export async function listContractTypesController(
   _request: Request,
   response: Response,
@@ -128,7 +96,6 @@ export async function listDepartmentsController(
 ): Promise<void> {
   try {
     const result = await listLocalDepartments();
->>>>>>> 7bdccd89169fbdd64c47bcf5afdd9e0174226cc9
     response.status(200).json(result);
   } catch (error) {
     handleControllerError(response, error);

@@ -1,10 +1,6 @@
 import sql from "mssql";
 import { getLocalDbPool } from "../config/database";
 import { getAppEnv } from "../config/env";
-import {
-  updateEmployeeInPublisherAndCurrentNode,
-  updateEmployeeStatusInPublisherAndCurrentNode,
-} from "./employeeReplicationService";
 
 type AttendanceStatus = "CHECKED_IN" | "CHECKED_OUT" | "LATE" | "ON_TIME";
 
@@ -83,25 +79,11 @@ export async function createEmployee(input: {
 export async function updateEmployee(
   maNhanVien: string,
   input: {
-<<<<<<< HEAD
-    hoTen: string;
-=======
     hoTen?: string;
->>>>>>> 7bdccd89169fbdd64c47bcf5afdd9e0174226cc9
     ngaySinh?: string;
     gioiTinh?: string;
     sdt?: string;
     email?: string;
-<<<<<<< HEAD
-    maPhongBan: string;
-    maChucVu: string;
-    ngayVaoLam?: string;
-    trangThai?: string;
-    maChiNhanh: string;
-  },
-) {
-  await updateEmployeeInPublisherAndCurrentNode(maNhanVien, input);
-=======
     maPhongBan?: string;
     maChucVu?: string;
     ngayVaoLam?: string;
@@ -168,29 +150,13 @@ export async function updateEmployee(
            MaPhongBan = COALESCE(@MaPhongBan, MaPhongBan),
            MaChucVu = COALESCE(@MaChucVu, MaChucVu),
            NgayVaoLam = COALESCE(@NgayVaoLam, NgayVaoLam)
-       WHERE MaNhanVien = @MaNhanVien`,
+      WHERE MaNhanVien = @MaNhanVien`,
     );
->>>>>>> 7bdccd89169fbdd64c47bcf5afdd9e0174226cc9
 
   await writeLocalSyncLog("NhanVien", "UPDATE", maNhanVien);
   return { maNhanVien };
 }
 
-<<<<<<< HEAD
-export async function deleteEmployee(maNhanVien: string) {
-  // Thuc te thuong chi mark la 'Nghi viec' chu khong xoa vat ly
-  await updateEmployeeStatusInPublisherAndCurrentNode(maNhanVien, "Nghi việc");
-
-  await writeLocalSyncLog("NhanVien", "UPDATE", maNhanVien);
-  return { maNhanVien, action: "DELETED_STATUS" };
-}
-
-export async function reactivateEmployee(maNhanVien: string) {
-  await updateEmployeeStatusInPublisherAndCurrentNode(maNhanVien, "Hoạt động");
-
-  await writeLocalSyncLog("NhanVien", "UPDATE", maNhanVien);
-  return { maNhanVien, action: "REACTIVATED" };
-=======
 export async function deleteEmployee(maNhanVien: string, branchScope?: string) {
   const pool = getLocalDbPool();
 
@@ -261,7 +227,6 @@ export async function reactivateEmployee(maNhanVien: string, branchScope?: strin
 
   await writeLocalSyncLog("NhanVien", "UPDATE", maNhanVien);
   return { maNhanVien, trangThai: "Dang lam" };
->>>>>>> 7bdccd89169fbdd64c47bcf5afdd9e0174226cc9
 }
 
 export async function createContract(input: {
@@ -491,17 +456,6 @@ export async function localSearchAndReport(input: {
       .input("Keyword", sql.NVarChar(150), keyword)
       .query(
         `SELECT nv.MaNhanVien, nv.HoTen, nv.Email, nv.SDT,
-<<<<<<< HEAD
-                nv.MaPhongBan, pb.TenPhongBan,
-                nv.MaChucVu, cv.TenChucVu,
-                nv.TrangThai
-         FROM NhanVien nv
-         LEFT JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
-         LEFT JOIN ChucVu cv ON cv.MaChucVu = nv.MaChucVu
-         WHERE @Keyword = '%%' 
-            OR nv.HoTen LIKE @Keyword 
-            OR nv.MaNhanVien LIKE @Keyword`,
-=======
                 nv.NgaySinh, nv.NgayVaoLam, nv.TrangThai,
                 nv.MaPhongBan, pb.TenPhongBan,
                 nv.MaChucVu, cv.TenChucVu,
@@ -515,7 +469,6 @@ export async function localSearchAndReport(input: {
            OR nv.HoTen LIKE @Keyword
            OR nv.MaNhanVien LIKE @Keyword
          )`,
->>>>>>> 7bdccd89169fbdd64c47bcf5afdd9e0174226cc9
       ),
     pool
       .request()

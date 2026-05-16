@@ -403,19 +403,11 @@ export async function companySearch(keyword?: string) {
   request.input("Keyword", sql.NVarChar(150), `%${keyword ?? ""}%`);
 
   const result = await request.query(
-<<<<<<< HEAD
     `SELECT nv.MaNhanVien, nv.HoTen, nv.Email, nv.SDT, nv.GioiTinh, nv.NgaySinh, nv.NgayVaoLam,
             nv.MaPhongBan, pb.TenPhongBan, 
             nv.MaChucVu, cv.TenChucVu,
             cn.MaChiNhanh, cn.TenChiNhanh,
             nv.TrangThai
-=======
-    `SELECT nv.MaNhanVien, nv.HoTen, nv.Email, nv.SDT,
-            nv.NgaySinh, nv.NgayVaoLam, nv.TrangThai,
-            nv.MaPhongBan, pb.TenPhongBan,
-            nv.MaChucVu, cv.TenChucVu,
-            cn.MaChiNhanh, cn.TenChiNhanh
->>>>>>> 7bdccd89169fbdd64c47bcf5afdd9e0174226cc9
      FROM NhanVien nv
      LEFT JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
      LEFT JOIN ChucVu cv ON cv.MaChucVu = nv.MaChucVu

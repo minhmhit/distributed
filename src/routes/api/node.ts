@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   approveLeaveController,
+  syncStatusController,
   checkInAttendanceController,
   checkOutAttendanceController,
   createContractController,
@@ -9,22 +10,15 @@ import {
   deleteEmployeeController,
   generateSalaryController,
   getAttendanceController,
-  listEmployeesController,
-  listLeavesController,
-  localSearchReportController,
-<<<<<<< HEAD
-  updateEmployeeController,
-  deleteEmployeeController,
-  reactivateEmployeeController,
-=======
-  reactivateEmployeeController,
-  syncStatusController,
-  updateEmployeeController,
   listBranchesController,
-  listPositionsController,
   listContractTypesController,
   listDepartmentsController,
->>>>>>> 7bdccd89169fbdd64c47bcf5afdd9e0174226cc9
+  listEmployeesController,
+  listLeavesController,
+  listPositionsController,
+  localSearchReportController,
+  updateEmployeeController,
+  reactivateEmployeeController,
 } from "../../controllers/nodeController";
 import { attachAuthContext, requireRoles } from "../../middleware/auth";
 
@@ -40,21 +34,9 @@ nodeRoutes.post(
   createEmployeeController,
 );
 
-<<<<<<< HEAD
 nodeRoutes.put(
   "/node/employees/:maNhanVien",
   requireRoles(["admin", "publisher_admin", "node_admin", "hr_manager"], {
-=======
-nodeRoutes.get(
-  "/node/employees",
-  requireRoles(["admin", "node_admin", "hr_manager", "viewer"]),
-  listEmployeesController,
-);
-
-nodeRoutes.put(
-  "/node/employees/:maNhanVien",
-  requireRoles(["admin", "node_admin", "hr_manager"], {
->>>>>>> 7bdccd89169fbdd64c47bcf5afdd9e0174226cc9
     enforceBranchScope: true,
   }),
   updateEmployeeController,
@@ -62,11 +44,7 @@ nodeRoutes.put(
 
 nodeRoutes.delete(
   "/node/employees/:maNhanVien",
-<<<<<<< HEAD
   requireRoles(["admin", "publisher_admin", "node_admin", "hr_manager"], {
-=======
-  requireRoles(["admin", "node_admin", "hr_manager"], {
->>>>>>> 7bdccd89169fbdd64c47bcf5afdd9e0174226cc9
     enforceBranchScope: true,
   }),
   deleteEmployeeController,
@@ -74,13 +52,7 @@ nodeRoutes.delete(
 
 nodeRoutes.patch(
   "/node/employees/:maNhanVien/reactivate",
-<<<<<<< HEAD
   requireRoles(["admin", "publisher_admin", "node_admin", "hr_manager"]),
-=======
-  requireRoles(["admin", "node_admin", "hr_manager"], {
-    enforceBranchScope: true,
-  }),
->>>>>>> 7bdccd89169fbdd64c47bcf5afdd9e0174226cc9
   reactivateEmployeeController,
 );
 

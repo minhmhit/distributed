@@ -83,11 +83,16 @@ export async function createEmployee(input: {
 export async function updateEmployee(
   maNhanVien: string,
   input: {
+<<<<<<< HEAD
     hoTen: string;
+=======
+    hoTen?: string;
+>>>>>>> 7bdccd89169fbdd64c47bcf5afdd9e0174226cc9
     ngaySinh?: string;
     gioiTinh?: string;
     sdt?: string;
     email?: string;
+<<<<<<< HEAD
     maPhongBan: string;
     maChucVu: string;
     ngayVaoLam?: string;
@@ -96,11 +101,82 @@ export async function updateEmployee(
   },
 ) {
   await updateEmployeeInPublisherAndCurrentNode(maNhanVien, input);
+=======
+    maPhongBan?: string;
+    maChucVu?: string;
+    ngayVaoLam?: string;
+  },
+  branchScope?: string,
+) {
+  const pool = getLocalDbPool();
+
+  const employeeResult = await pool
+    .request()
+    .input("MaNhanVien", sql.VarChar(10), maNhanVien)
+    .query(
+      `SELECT nv.MaNhanVien, pb.MaChiNhanh
+       FROM NhanVien nv
+       LEFT JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
+       WHERE nv.MaNhanVien = @MaNhanVien`,
+    );
+
+  if (employeeResult.recordset.length === 0) {
+    throw new Error("Khong tim thay nhan vien");
+  }
+
+  const employeeBranch = employeeResult.recordset[0]?.MaChiNhanh;
+  if (branchScope && employeeBranch && branchScope !== employeeBranch) {
+    throw new Error("Khong duoc phep cap nhat nhan vien khac chi nhanh");
+  }
+
+  if (input.maPhongBan) {
+    const departmentBranch = branchScope || employeeBranch;
+    const department = await pool
+      .request()
+      .input("MaPhongBan", sql.VarChar(10), input.maPhongBan)
+      .input("MaChiNhanh", sql.VarChar(10), departmentBranch ?? null)
+      .query(
+        `SELECT 1 AS found
+         FROM PhongBan
+         WHERE MaPhongBan = @MaPhongBan
+           AND (@MaChiNhanh IS NULL OR MaChiNhanh = @MaChiNhanh)`,
+      );
+
+    if (department.recordset.length === 0) {
+      throw new Error("Phong ban khong thuoc chi nhanh hien tai");
+    }
+  }
+
+  await pool
+    .request()
+    .input("MaNhanVien", sql.VarChar(10), maNhanVien)
+    .input("HoTen", sql.NVarChar(150), input.hoTen ?? null)
+    .input("NgaySinh", sql.Date, input.ngaySinh ?? null)
+    .input("GioiTinh", sql.NVarChar(10), input.gioiTinh ?? null)
+    .input("SDT", sql.VarChar(15), input.sdt ?? null)
+    .input("Email", sql.VarChar(100), input.email ?? null)
+    .input("MaPhongBan", sql.VarChar(10), input.maPhongBan ?? null)
+    .input("MaChucVu", sql.VarChar(10), input.maChucVu ?? null)
+    .input("NgayVaoLam", sql.Date, input.ngayVaoLam ?? null)
+    .query(
+      `UPDATE NhanVien
+       SET HoTen = COALESCE(@HoTen, HoTen),
+           NgaySinh = COALESCE(@NgaySinh, NgaySinh),
+           GioiTinh = COALESCE(@GioiTinh, GioiTinh),
+           SDT = COALESCE(@SDT, SDT),
+           Email = COALESCE(@Email, Email),
+           MaPhongBan = COALESCE(@MaPhongBan, MaPhongBan),
+           MaChucVu = COALESCE(@MaChucVu, MaChucVu),
+           NgayVaoLam = COALESCE(@NgayVaoLam, NgayVaoLam)
+       WHERE MaNhanVien = @MaNhanVien`,
+    );
+>>>>>>> 7bdccd89169fbdd64c47bcf5afdd9e0174226cc9
 
   await writeLocalSyncLog("NhanVien", "UPDATE", maNhanVien);
   return { maNhanVien };
 }
 
+<<<<<<< HEAD
 export async function deleteEmployee(maNhanVien: string) {
   // Thuc te thuong chi mark la 'Nghi viec' chu khong xoa vat ly
   await updateEmployeeStatusInPublisherAndCurrentNode(maNhanVien, "Nghi việc");
@@ -114,6 +190,78 @@ export async function reactivateEmployee(maNhanVien: string) {
 
   await writeLocalSyncLog("NhanVien", "UPDATE", maNhanVien);
   return { maNhanVien, action: "REACTIVATED" };
+=======
+export async function deleteEmployee(maNhanVien: string, branchScope?: string) {
+  const pool = getLocalDbPool();
+
+  const employeeResult = await pool
+    .request()
+    .input("MaNhanVien", sql.VarChar(10), maNhanVien)
+    .query(
+      `SELECT nv.MaNhanVien, pb.MaChiNhanh
+       FROM NhanVien nv
+       LEFT JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
+       WHERE nv.MaNhanVien = @MaNhanVien`,
+    );
+
+  if (employeeResult.recordset.length === 0) {
+    throw new Error("Khong tim thay nhan vien");
+  }
+
+  const employeeBranch = employeeResult.recordset[0]?.MaChiNhanh;
+  if (branchScope && employeeBranch && branchScope !== employeeBranch) {
+    throw new Error("Khong duoc phep xoa nhan vien khac chi nhanh");
+  }
+
+  await pool
+    .request()
+    .input("MaNhanVien", sql.VarChar(10), maNhanVien)
+    .input("TrangThai", sql.NVarChar(50), "DA_NGHI_VIEC")
+    .query(
+      `UPDATE NhanVien
+       SET TrangThai = @TrangThai
+       WHERE MaNhanVien = @MaNhanVien`,
+    );
+
+  await writeLocalSyncLog("NhanVien", "UPDATE", maNhanVien);
+  return { maNhanVien, trangThai: "DA_NGHI_VIEC" };
+}
+
+export async function reactivateEmployee(maNhanVien: string, branchScope?: string) {
+  const pool = getLocalDbPool();
+
+  const employeeResult = await pool
+    .request()
+    .input("MaNhanVien", sql.VarChar(10), maNhanVien)
+    .query(
+      `SELECT nv.MaNhanVien, pb.MaChiNhanh
+       FROM NhanVien nv
+       LEFT JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
+       WHERE nv.MaNhanVien = @MaNhanVien`,
+    );
+
+  if (employeeResult.recordset.length === 0) {
+    throw new Error("Khong tim thay nhan vien");
+  }
+
+  const employeeBranch = employeeResult.recordset[0]?.MaChiNhanh;
+  if (branchScope && employeeBranch && branchScope !== employeeBranch) {
+    throw new Error("Khong duoc phep cap nhat nhan vien khac chi nhanh");
+  }
+
+  await pool
+    .request()
+    .input("MaNhanVien", sql.VarChar(10), maNhanVien)
+    .input("TrangThai", sql.NVarChar(50), "Dang lam")
+    .query(
+      `UPDATE NhanVien
+       SET TrangThai = @TrangThai
+       WHERE MaNhanVien = @MaNhanVien`,
+    );
+
+  await writeLocalSyncLog("NhanVien", "UPDATE", maNhanVien);
+  return { maNhanVien, trangThai: "Dang lam" };
+>>>>>>> 7bdccd89169fbdd64c47bcf5afdd9e0174226cc9
 }
 
 export async function createContract(input: {
@@ -343,6 +491,7 @@ export async function localSearchAndReport(input: {
       .input("Keyword", sql.NVarChar(150), keyword)
       .query(
         `SELECT nv.MaNhanVien, nv.HoTen, nv.Email, nv.SDT,
+<<<<<<< HEAD
                 nv.MaPhongBan, pb.TenPhongBan,
                 nv.MaChucVu, cv.TenChucVu,
                 nv.TrangThai
@@ -352,6 +501,21 @@ export async function localSearchAndReport(input: {
          WHERE @Keyword = '%%' 
             OR nv.HoTen LIKE @Keyword 
             OR nv.MaNhanVien LIKE @Keyword`,
+=======
+                nv.NgaySinh, nv.NgayVaoLam, nv.TrangThai,
+                nv.MaPhongBan, pb.TenPhongBan,
+                nv.MaChucVu, cv.TenChucVu,
+                cn.MaChiNhanh, cn.TenChiNhanh
+         FROM NhanVien nv
+         LEFT JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
+         LEFT JOIN ChucVu cv ON cv.MaChucVu = nv.MaChucVu
+         LEFT JOIN ChiNhanh cn ON cn.MaChiNhanh = pb.MaChiNhanh
+         WHERE (
+           @Keyword = '%%'
+           OR nv.HoTen LIKE @Keyword
+           OR nv.MaNhanVien LIKE @Keyword
+         )`,
+>>>>>>> 7bdccd89169fbdd64c47bcf5afdd9e0174226cc9
       ),
     pool
       .request()
@@ -380,4 +544,130 @@ export async function localSearchAndReport(input: {
     attendance: attendance.recordset,
     payroll: payroll.recordset,
   };
+}
+
+export async function listLocalEmployees(keyword?: string) {
+  const pool = getLocalDbPool();
+  const kw = `%${keyword ?? ""}%`;
+
+  const result = await pool
+    .request()
+    .input("Keyword", sql.NVarChar(150), kw)
+    .query(
+      `SELECT nv.MaNhanVien, nv.HoTen, nv.Email, nv.SDT, nv.GioiTinh,
+              nv.NgaySinh, nv.NgayVaoLam, nv.TrangThai,
+              pb.MaPhongBan, pb.TenPhongBan,
+              cv.MaChucVu, cv.TenChucVu, cv.HeSoLuong,
+              cn.MaChiNhanh, cn.TenChiNhanh
+       FROM NhanVien nv
+       LEFT JOIN PhongBan pb ON pb.MaPhongBan = nv.MaPhongBan
+       LEFT JOIN ChucVu cv ON cv.MaChucVu = nv.MaChucVu
+       LEFT JOIN ChiNhanh cn ON cn.MaChiNhanh = pb.MaChiNhanh
+       WHERE (
+           @Keyword = '%%'
+           OR nv.HoTen LIKE @Keyword
+           OR nv.MaNhanVien LIKE @Keyword
+           OR nv.Email LIKE @Keyword
+         )
+       ORDER BY nv.HoTen`,
+    );
+
+  return result.recordset;
+}
+
+export async function listLocalBranches() {
+  const pool = getLocalDbPool();
+  const result = await pool.request().query("SELECT * FROM ChiNhanh");
+  return result.recordset;
+}
+
+export async function listLocalPositions() {
+  const pool = getLocalDbPool();
+  const result = await pool.request().query("SELECT * FROM ChucVu");
+  return result.recordset;
+}
+
+export async function listLocalContractTypes() {
+  const pool = getLocalDbPool();
+  const result = await pool.request().query("SELECT * FROM LoaiHopDong");
+  return result.recordset;
+}
+
+export async function listLocalDepartments() {
+  const pool = getLocalDbPool();
+  const result = await pool.request().query("SELECT * FROM PhongBan");
+  return result.recordset;
+}
+
+export async function listLeaves(input: { trangThai?: string; maNhanVien?: string }) {
+  const pool = getLocalDbPool();
+
+  let whereClause = "WHERE 1=1";
+  const request = pool.request();
+
+  if (input.trangThai) {
+    whereClause += " AND np.TrangThai = @TrangThai";
+    request.input("TrangThai", sql.NVarChar(50), input.trangThai);
+  }
+
+  if (input.maNhanVien) {
+    whereClause += " AND np.MaNhanVien = @MaNhanVien";
+    request.input("MaNhanVien", sql.VarChar(10), input.maNhanVien);
+  }
+
+  const result = await request.query(
+    `SELECT np.MaNghiPhep, np.MaNhanVien, nv.HoTen,
+            np.TuNgay, np.DenNgay, np.LyDo, np.TrangThai
+     FROM NghiPhep np
+     LEFT JOIN NhanVien nv ON nv.MaNhanVien = np.MaNhanVien
+     ${whereClause}
+     ORDER BY np.MaNghiPhep DESC`,
+  );
+
+  return result.recordset;
+}
+
+export async function getAttendanceByEmployee(input: {
+  maNhanVien: string;
+  tuNgay?: string;
+  denNgay?: string;
+}) {
+  const pool = getLocalDbPool();
+  const request = pool.request();
+  request.input("MaNhanVien", sql.VarChar(10), input.maNhanVien);
+
+  let dateFilter = "";
+  if (input.tuNgay) {
+    dateFilter += " AND Ngay >= @TuNgay";
+    request.input("TuNgay", sql.Date, input.tuNgay);
+  }
+  if (input.denNgay) {
+    dateFilter += " AND Ngay <= @DenNgay";
+    request.input("DenNgay", sql.Date, input.denNgay);
+  }
+
+  const result = await request.query(
+    `SELECT MaNhanVien, Ngay, GioVao, GioRa, TrangThai
+     FROM ChamCong
+     WHERE MaNhanVien = @MaNhanVien ${dateFilter}
+     ORDER BY Ngay DESC`,
+  );
+
+  return result.recordset;
+}
+
+export async function getSyncPendingCount() {
+  const pool = getLocalDbPool();
+
+  const result = await pool.request().query(
+    `SELECT
+       COUNT(*) AS TongPending,
+       SUM(CASE WHEN TrangThai = 'PENDING_PUBLISHER_SYNC' THEN 1 ELSE 0 END) AS PendingSync,
+       SUM(CASE WHEN TrangThai = 'DEFERRED_OFFLINE' THEN 1 ELSE 0 END) AS DeferredOffline,
+       SUM(CASE WHEN TrangThai = 'SYNCED_TO_PUBLISHER' THEN 1 ELSE 0 END) AS DaSynced,
+       SUM(CASE WHEN TrangThai = 'CONFLICT_IGNORED' THEN 1 ELSE 0 END) AS XungDot
+     FROM SyncLog`,
+  );
+
+  return result.recordset[0] ?? { TongPending: 0, PendingSync: 0, DeferredOffline: 0, DaSynced: 0, XungDot: 0 };
 }

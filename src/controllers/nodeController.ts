@@ -5,8 +5,19 @@ import {
   createContract,
   createEmployee,
   createLeaveRequest,
+  deleteEmployee,
   generateSalary,
+  getAttendanceByEmployee,
+  getSyncPendingCount,
+  listLeaves,
+  listLocalBranches,
+  listLocalContractTypes,
+  listLocalDepartments,
+  listLocalEmployees,
+  listLocalPositions,
   localSearchAndReport,
+  reactivateEmployee,
+  updateEmployee,
   updateLeaveApproval,
   updateEmployee,
   deleteEmployee,
@@ -27,13 +38,26 @@ export async function createEmployeeController(
   response: Response,
 ): Promise<void> {
   try {
-    const result = await createEmployee(request.body);
+    // Auto-inject maChiNhanh từ token nếu không có trong body
+    const maChiNhanhFromToken = request.auth?.branchCode;
+    const body = {
+      ...request.body,
+      maChiNhanh: request.body.maChiNhanh || maChiNhanhFromToken,
+    };
+
+    if (!body.maChiNhanh) {
+      response.status(400).json({ message: "maChiNhanh la bat buoc" });
+      return;
+    }
+
+    const result = await createEmployee(body);
     response.status(201).json(result);
   } catch (error) {
     handleControllerError(response, error);
   }
 }
 
+<<<<<<< HEAD
 export async function updateEmployeeController(
   request: Request,
   response: Response,
@@ -41,12 +65,21 @@ export async function updateEmployeeController(
   try {
     const maNhanVien = String(request.params.maNhanVien || "");
     const result = await updateEmployee(maNhanVien, request.body);
+=======
+export async function listBranchesController(
+  _request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const result = await listLocalBranches();
+>>>>>>> 7bdccd89169fbdd64c47bcf5afdd9e0174226cc9
     response.status(200).json(result);
   } catch (error) {
     handleControllerError(response, error);
   }
 }
 
+<<<<<<< HEAD
 export async function deleteEmployeeController(
   request: Request,
   response: Response,
@@ -54,12 +87,21 @@ export async function deleteEmployeeController(
   try {
     const maNhanVien = String(request.params.maNhanVien || "");
     const result = await deleteEmployee(maNhanVien);
+=======
+export async function listPositionsController(
+  _request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const result = await listLocalPositions();
+>>>>>>> 7bdccd89169fbdd64c47bcf5afdd9e0174226cc9
     response.status(200).json(result);
   } catch (error) {
     handleControllerError(response, error);
   }
 }
 
+<<<<<<< HEAD
 export async function reactivateEmployeeController(
   request: Request,
   response: Response,
@@ -67,6 +109,26 @@ export async function reactivateEmployeeController(
   try {
     const maNhanVien = String(request.params.maNhanVien || "");
     const result = await reactivateEmployee(maNhanVien);
+=======
+export async function listContractTypesController(
+  _request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const result = await listLocalContractTypes();
+    response.status(200).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function listDepartmentsController(
+  _request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const result = await listLocalDepartments();
+>>>>>>> 7bdccd89169fbdd64c47bcf5afdd9e0174226cc9
     response.status(200).json(result);
   } catch (error) {
     handleControllerError(response, error);
@@ -158,6 +220,99 @@ export async function localSearchReportController(
     const nam = request.query.nam ? Number(request.query.nam) : undefined;
 
     const result = await localSearchAndReport({ keyword, thang, nam });
+    response.status(200).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function listEmployeesController(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const keyword = request.query.keyword as string | undefined;
+    const result = await listLocalEmployees(keyword);
+    response.status(200).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function updateEmployeeController(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const maNhanVien = String(request.params.maNhanVien ?? "");
+    const result = await updateEmployee(maNhanVien, request.body, request.auth?.branchCode);
+    response.status(200).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function deleteEmployeeController(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const maNhanVien = String(request.params.maNhanVien ?? "");
+    const result = await deleteEmployee(maNhanVien, request.auth?.branchCode);
+    response.status(200).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function reactivateEmployeeController(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const maNhanVien = String(request.params.maNhanVien ?? "");
+    const result = await reactivateEmployee(maNhanVien, request.auth?.branchCode);
+    response.status(200).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function listLeavesController(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const trangThai = request.query.trangThai as string | undefined;
+    const maNhanVien = request.query.maNhanVien as string | undefined;
+    const result = await listLeaves({ trangThai, maNhanVien });
+    response.status(200).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function getAttendanceController(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const maNhanVien = String(request.params.maNhanVien ?? "");
+    const tuNgay = request.query.tuNgay as string | undefined;
+    const denNgay = request.query.denNgay as string | undefined;
+    const result = await getAttendanceByEmployee({ maNhanVien, tuNgay, denNgay });
+    response.status(200).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function syncStatusController(
+  _request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const result = await getSyncPendingCount();
     response.status(200).json(result);
   } catch (error) {
     handleControllerError(response, error);

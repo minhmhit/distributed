@@ -122,11 +122,21 @@ export function authorizeRequest(
     options.branchKeys ?? DEFAULT_BRANCH_KEYS,
   );
 
-  if (!targetBranch || !auth.branchCode || targetBranch !== auth.branchCode) {
+  // Nếu request có gửi chi nhánh và không khớp với token thì mới chặn
+  if (targetBranch && auth.branchCode && targetBranch !== auth.branchCode) {
     return {
       allowed: false,
       statusCode: 403,
       message: "Forbidden: branch scope mismatch",
+    };
+  }
+
+  // Nếu endpoint yêu cầu enforceBranchScope mà user lại thuộc public scope (không có mcn cụ thể)
+  if (!auth.branchCode) {
+    return {
+       allowed: false,
+       statusCode: 403,
+       message: "Forbidden: user does not have a branch scope",
     };
   }
 

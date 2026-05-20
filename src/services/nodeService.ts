@@ -258,6 +258,30 @@ export async function createContract(input: {
   return { maHopDong: input.maHopDong };
 }
 
+export async function listLocalContracts(input: { maNhanVien?: string } = {}) {
+  const pool = getLocalDbPool();
+  const request = pool.request();
+
+  let whereClause = "WHERE 1=1";
+  if (input.maNhanVien) {
+    whereClause += " AND hd.MaNhanVien = @MaNhanVien";
+    request.input("MaNhanVien", sql.VarChar(10), input.maNhanVien);
+  }
+
+  const result = await request.query(
+    `SELECT hd.MaHopDong, hd.MaNhanVien, nv.HoTen,
+            hd.MaLoaiHopDong, lhd.TenLoaiHopDong, lhd.ThoiHanThang,
+            hd.NgayBatDau, hd.NgayKetThuc, hd.TrangThai
+     FROM HopDong hd
+     LEFT JOIN NhanVien nv ON nv.MaNhanVien = hd.MaNhanVien
+     LEFT JOIN LoaiHopDong lhd ON lhd.MaLoaiHopDong = hd.MaLoaiHopDong
+     ${whereClause}
+     ORDER BY hd.NgayBatDau DESC, hd.MaHopDong DESC`,
+  );
+
+  return result.recordset;
+}
+
 export async function checkInAttendance(input: {
   maNhanVien: string;
   ngay: string;
@@ -440,6 +464,41 @@ export async function generateSalary(input: {
     nam: input.nam,
     luongCoBan,
   };
+}
+
+export async function listLocalSalaries(input: {
+  maNhanVien?: string;
+  thang?: number;
+  nam?: number;
+} = {}) {
+  const pool = getLocalDbPool();
+  const request = pool.request();
+
+  let whereClause = "WHERE 1=1";
+  if (input.maNhanVien) {
+    whereClause += " AND l.MaNhanVien = @MaNhanVien";
+    request.input("MaNhanVien", sql.VarChar(10), input.maNhanVien);
+  }
+  if (input.thang) {
+    whereClause += " AND l.Thang = @Thang";
+    request.input("Thang", sql.Int, input.thang);
+  }
+  if (input.nam) {
+    whereClause += " AND l.Nam = @Nam";
+    request.input("Nam", sql.Int, input.nam);
+  }
+
+  const result = await request.query(
+    `SELECT l.MaLuong, l.MaNhanVien, nv.HoTen,
+            l.Thang, l.Nam, l.LuongCoBan, l.PhuCap, l.Thuong, l.KhauTru,
+            (l.LuongCoBan + l.PhuCap + l.Thuong - l.KhauTru) AS TongLuong
+     FROM Luong l
+     LEFT JOIN NhanVien nv ON nv.MaNhanVien = l.MaNhanVien
+     ${whereClause}
+     ORDER BY l.Nam DESC, l.Thang DESC, l.MaNhanVien`,
+  );
+
+  return result.recordset;
 }
 
 export async function localSearchAndReport(input: {

@@ -10,11 +10,13 @@ import {
   getAttendanceByEmployee,
   getSyncPendingCount,
   listLeaves,
+  listLocalContracts,
   listLocalBranches,
   listLocalContractTypes,
   listLocalDepartments,
   listLocalEmployees,
   listLocalPositions,
+  listLocalSalaries,
   localSearchAndReport,
   reactivateEmployee,
   updateEmployee,
@@ -114,6 +116,19 @@ export async function createContractController(
   }
 }
 
+export async function listContractsController(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const maNhanVien = request.query.maNhanVien as string | undefined;
+    const result = await listLocalContracts({ maNhanVien });
+    response.status(200).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
 export async function checkInAttendanceController(
   request: Request,
   response: Response,
@@ -171,6 +186,22 @@ export async function generateSalaryController(
 ): Promise<void> {
   try {
     const result = await generateSalary(request.body);
+    response.status(200).json(result);
+  } catch (error) {
+    handleControllerError(response, error);
+  }
+}
+
+export async function listSalariesController(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  try {
+    const maNhanVien = request.query.maNhanVien as string | undefined;
+    const thang = request.query.thang ? Number(request.query.thang) : undefined;
+    const nam = request.query.nam ? Number(request.query.nam) : undefined;
+
+    const result = await listLocalSalaries({ maNhanVien, thang, nam });
     response.status(200).json(result);
   } catch (error) {
     handleControllerError(response, error);

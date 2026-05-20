@@ -11,11 +11,13 @@ import {
   generateSalaryController,
   getAttendanceController,
   listBranchesController,
+  listContractsController,
   listContractTypesController,
   listDepartmentsController,
   listEmployeesController,
   listLeavesController,
   listPositionsController,
+  listSalariesController,
   localSearchReportController,
   updateEmployeeController,
   reactivateEmployeeController,
@@ -32,6 +34,12 @@ nodeRoutes.post(
     enforceBranchScope: true,
   }),
   createEmployeeController,
+);
+
+nodeRoutes.get(
+  "/node/employees",
+  requireRoles(["admin", "node_admin", "hr_manager", "viewer"]),
+  listEmployeesController,
 );
 
 nodeRoutes.put(
@@ -60,6 +68,12 @@ nodeRoutes.post(
   "/node/contracts",
   requireRoles(["admin", "publisher_admin", "node_admin", "hr_manager"]),
   createContractController,
+);
+
+nodeRoutes.get(
+  "/node/contracts",
+  requireRoles(["admin", "node_admin", "hr_manager", "viewer"]),
+  listContractsController,
 );
 
 nodeRoutes.post(
@@ -102,6 +116,12 @@ nodeRoutes.post(
   "/node/salaries/generate",
   requireRoles(["admin", "publisher_admin", "node_admin", "hr_manager"]),
   generateSalaryController,
+);
+
+nodeRoutes.get(
+  "/node/salaries",
+  requireRoles(["admin", "node_admin", "hr_manager", "viewer"]),
+  listSalariesController,
 );
 
 nodeRoutes.get(
